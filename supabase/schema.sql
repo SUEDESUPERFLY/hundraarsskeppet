@@ -216,3 +216,6 @@ revoke all on function public.hs_auth(uuid, text) from public, anon, authenticat
 grant execute on function public.hs_now(), public.hs_register(uuid,text,text), public.hs_load(uuid,text), public.hs_save(uuid,text,jsonb,jsonb),
   public.hs_players_list(), public.hs_ship_get(), public.hs_tick(), public.hs_vote(uuid,text,text), public.hs_donate(uuid,text,text,numeric,numeric),
   public.hs_cut(uuid,text) to anon, authenticated;
+
+-- RLS already hides every row; also drop the default table grants so the API roles cannot touch the tables at all
+revoke all on table public.hs_players, public.hs_donations, public.hs_votes, public.hs_ship from anon, authenticated;
