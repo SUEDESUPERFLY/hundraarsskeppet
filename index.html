@@ -332,6 +332,11 @@ body.shared #speeds,body.shared .ffwd{display:none!important}
 .chatlog .cl i{display:block;font-style:normal;font-size:10.5px;color:var(--soft);text-align:right;margin-top:1px}
 .chatrow{display:flex;gap:8px;margin-bottom:10px}.chatin{flex:1;min-width:0;background:#fff;border:1px solid var(--line2);border-radius:14px;padding:10px 13px;font:500 16px/1.2 var(--f-ui);color:var(--ink);user-select:text;-webkit-user-select:text}
 .chatlog.dm{max-height:min(30vh,240px);min-height:64px}.chath{font:600 13px/1.2 var(--f-d);color:var(--soft);margin:2px 0 6px}.dmchips{margin-bottom:10px}.dmchips .chip .dot{display:inline-block;min-width:17px;height:17px;border-radius:9px;background:#e0564a;color:#fff;font:700 10.5px/17px var(--f-ui);font-style:normal;margin-left:6px;padding:0 4px;vertical-align:1px}
+.chip .dot{display:inline-block;min-width:17px;height:17px;border-radius:9px;background:#e0564a;color:#fff;font:700 10.5px/17px var(--f-ui);font-style:normal;margin-left:6px;padding:0 4px;vertical-align:1px}
+.chatlog .cl{position:relative}.chatlog .cl .flag{position:absolute;top:3px;right:4px;width:24px;height:24px;border-radius:8px;font-size:12px;line-height:24px;color:var(--soft);background:transparent;opacity:.75}.chatlog .cl:not(.me){padding-right:28px}
+.chatlog .cl.priv{background:#eef4ff;border-color:rgba(61,127,196,.25)}.admlog{max-height:min(55vh,460px)}.admlog .cl{max-width:100%;align-self:stretch}
+.frbox{margin-bottom:10px}.frbox .row{margin-top:4px}.frok{color:#2f7d4a!important;margin:0 0 4px}.repq{margin:6px 0;padding:8px 11px;border-left:3px solid #e8993a;background:var(--card2);border-radius:8px;font-size:14px;user-select:text;-webkit-user-select:text;overflow-wrap:anywhere}
+.admtabs{margin-bottom:8px}.admtabs .chip[aria-pressed="true"]{background:var(--ink);color:#fff}.admrow .row{margin-top:8px}
 #btnSay{position:relative}#btnSay .badge{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#e0564a;color:#fff;font:700 11px/19px var(--f-ui);font-style:normal;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .codebox{width:100%;box-sizing:border-box;font:500 13px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:9px 10px;border-radius:10px;border:1px solid var(--line2);background:#fff;margin:6px 0;user-select:all;-webkit-user-select:all}
 .slot.shared{flex-wrap:wrap;background:linear-gradient(135deg,rgba(255,236,200,.9),rgba(255,250,240,.92));border:1px solid rgba(232,153,58,.35)}.slot.shared .row{margin-top:6px;width:100%}
@@ -3252,10 +3257,17 @@ const HSID={get(){try{const v=JSON.parse(localStorage.getItem(HSID_KEY)||'null')
 function hsCleanChat(t){return Array.from(String(t||'').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g,' ').replace(/\s+/g,' ').trim()).slice(0,200).join('');}
 
 /* ---------- Supabase ---------- */
-function SupaNet(cfg){const sb=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:false,autoRefreshToken:false}});
-  const rpc=async(fn,args)=>{const{data,error}=await sb.rpc(fn,args||{});if(error)throw new Error(error.message||String(error));return data;};
+/* Each device signs in anonymously (no e-mail, nothing personal). The session ties the device to the player it plays as,
+   so the database can let only let-in players into the live channel and the shared data. */
+function SupaNet(cfg){const sb=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'hs-auth-'+HSID_KEY}});
+  const A={authed:false,err:'',p:null};
+  const authInit=()=>A.p||(A.p=(async()=>{try{const g=await sb.auth.getSession();let s=g&&g.data&&g.data.session;
+      if(!s){const r=await sb.auth.signInAnonymously();if(r.error)throw r.error;s=r.data&&r.data.session;}
+      if(s){A.authed=true;try{sb.realtime.setAuth(s.access_token);}catch(e){}}}catch(e){A.err=String(e&&e.message||e);}})());
+  const rpc=async(fn,args)=>{await authInit();const{data,error}=await sb.rpc(fn,args||{});if(error)throw new Error(error.message||String(error));return data;};
+  const sec=me=>({p_id:me.id,p_secret:me.secret}),nn=v=>v==null?null:v;
   const H={};let syncCb=null,connCb=null;
-  return{kind:'supabase',
+  return{kind:'supabase',authed:()=>A.authed,authErr:()=>A.err,authReady:authInit,
     async now(){const t0=Date.now();const v=await rpc('hs_now');const t1=Date.now();return{server:+v,rtt:t1-t0,local:(t0+t1)/2};},
     register:(me,name)=>rpc('hs_register',{p_id:me.id,p_secret:me.secret,p_name:name}),
     load:me=>rpc('hs_load',{p_id:me.id,p_secret:me.secret}),
@@ -3270,19 +3282,30 @@ function SupaNet(cfg){const sb=window.supabase.createClient(cfg.url,cfg.key,{aut
     chatSince:after=>rpc('hs_chat_since',{p_after:after||0}),
     chatSend2:(me,body,to)=>rpc('hs_chat_send2',{p_id:me.id,p_secret:me.secret,p_body:body,p_to:to||null}),
     chatFeed:(me,after)=>rpc('hs_chat_feed',{p_id:me.id,p_secret:me.secret,p_after:after||0}),
-    rt:supaRt(sb,H,()=>syncCb,f=>{syncCb=f;},()=>connCb,f=>{connCb=f;})};}
+    status:me=>rpc('hs_status',sec(me)),
+    friends:me=>rpc('hs_friends',sec(me)),
+    friendSet:(me,to,on)=>rpc('hs_friend_set',Object.assign(sec(me),{p_to:to,p_on:!!on})),
+    blockSet:(me,to,on)=>rpc('hs_block_set',Object.assign(sec(me),{p_to:to,p_on:!!on})),
+    report:(me,target,msg,reason)=>rpc('hs_report_add',Object.assign(sec(me),{p_target:target,p_msg:nn(msg),p_reason:reason||''})),
+    myReports:me=>rpc('hs_my_reports',sec(me)),
+    adminOverview:me=>rpc('hs_admin_overview',sec(me)),
+    adminPlayer:(me,target,o)=>rpc('hs_admin_player',Object.assign(sec(me),{p_target:target,p_status:nn(o.status),p_admin:o.admin==null?null:!!o.admin,p_name:nn(o.name)})),
+    adminReport:(me,id,outcome)=>rpc('hs_admin_report',Object.assign(sec(me),{p_report:id,p_outcome:outcome||''})),
+    adminChatlog:(me,before)=>rpc('hs_admin_chatlog',Object.assign(sec(me),{p_before:nn(before)})),
+    adminDeleteMsg:(me,id)=>rpc('hs_admin_delete_msg',Object.assign(sec(me),{p_msg:id})),
+    rt:supaRt(sb,H,()=>syncCb,f=>{syncCb=f;},()=>connCb,f=>{connCb=f;},authInit)};}
 /* Realtime with the free plan's rules in mind:
    - Presence is for slow state only. Supabase closes a client's channel if it sends more than 5 presence updates in 30 s,
      so presence is tracked once per join (name, look, home) and never more than 3 times per 30 s.
    - Moves are fire-and-forget broadcasts. They are dropped while the channel is down instead of falling back to one
      HTTP request per move (that fallback is what made remote players stutter).
    - A channel the server closes is rejoined with backoff; socket drops are rejoined by supabase-js itself. */
-function supaRt(sb,H,getSync,setSync,getConn,setConn){const EVS=['mv','say','soc','fx','ship','chat'];
+function supaRt(sb,H,getSync,setSync,getConn,setConn,authInit){const EVS=['mv','say','soc','fx','ship','chat','fr','kick'];let priv=false;
   let ch=null,joined=false,leaving=true,gen=0,retry=0,rejoinT=0,trackT=0,watchT=0,uidK='',meta={},metaKey='';const TR=[];
   const S={joined:false,rejoins:0,mvOut:0,mvIn:0,dropped:0,lastClose:'',since:0};
   function doTrack(){if(!joined||!ch)return;const now=Date.now();while(TR.length&&now-TR[0]>31000)TR.shift();
     if(TR.length>=3){clearTimeout(trackT);trackT=setTimeout(doTrack,31000-(now-TR[0])+100);return;}TR.push(now);ch.track(meta).catch(()=>{});}
-  function open(){const g=++gen;const c=sb.channel('hs-ship',{config:{presence:{key:uidK},broadcast:{self:false}}});ch=c;
+  function open(){const g=++gen;const c=sb.channel(priv?'hs-ship-p':'hs-ship',{config:{presence:{key:uidK},broadcast:{self:false},private:priv}});ch=c;
     c.on('presence',{event:'sync'},()=>{const f=getSync();if(g!==gen||!f)return;const st=c.presenceState();f(Object.keys(st).map(k=>{const a=st[k];return Object.assign({},a[a.length-1],{uid:k});}));});
     for(const ev of EVS)c.on('broadcast',{event:ev},m=>{if(g!==gen)return;if(ev==='mv')S.mvIn++;const f=H[ev];if(f)f(m.payload||{});});
     c.subscribe((s,err)=>{if(g!==gen)return;const cc=getConn();
@@ -3290,7 +3313,7 @@ function supaRt(sb,H,getSync,setSync,getConn,setConn){const EVS=['mv','say','soc
       else{joined=false;S.joined=false;S.lastClose=s+(err&&err.message?': '+err.message:'');if(cc)cc(false);if(s==='CLOSED'&&!leaving)rejoin();}});}
   function rejoin(){if(rejoinT||leaving)return;const d=Math.min(30000,1000*Math.pow(2,retry++))+Math.random()*400;
     rejoinT=setTimeout(()=>{rejoinT=0;if(leaving)return;const old=ch;ch=null;gen++;if(old){try{sb.removeChannel(old);}catch(e){}}S.rejoins++;open();},d);}
-  return{join(uid,m){leaving=false;uidK=uid;meta=m;metaKey=JSON.stringify(m);retry=0;open();
+  return{join(uid,m,o){leaving=false;uidK=uid;meta=m;metaKey=JSON.stringify(m);retry=0;S.since=Date.now();priv=!!(o&&o.priv);S.priv=priv;/* the private channel needs the session token first */Promise.resolve(authInit&&authInit()).then(()=>{if(!leaving&&!ch)open();});
       clearInterval(watchT);watchT=setInterval(()=>{if(!leaving&&!joined&&!rejoinT&&Date.now()-S.since>25000){S.since=Date.now();rejoin();}},5000);},
     track(m){const k=JSON.stringify(m);meta=m;if(k===metaKey)return Promise.resolve();metaKey=k;doTrack();return Promise.resolve();},
     send(ev,payload){if(!ch)return Promise.resolve();if(!joined&&ev==='mv'){S.dropped++;return Promise.resolve();}if(ev==='mv')S.mvOut++;return ch.send({type:'broadcast',event:ev,payload}).catch(()=>{});},
@@ -3367,7 +3390,8 @@ function hsBackend(){try{const q=new URLSearchParams(location.search);if(q.get('
 const NETB=hsBackend();
 const HS_SEED=424242;
 const HSN={me:null,off:0,rtt:0,ship:null,players:[],peers:[],rem:new Map(),online:false,conn:false,lastMv:0,mvKey:'',wasMoving:false,lx:0,lz:0,svx:0,svz:0,
-  chat:[],chatLast:0,unread:0,chatT:0,chatBusy:false,chatAgain:false,chatSentT:0,chatOff:false,dmOff:false,dmWasOff:false,dmRetry:0,fc:0,fT:0,fps:0,rateIn:0,rateOut:0,rateT:0,rateS:null,
+  chat:[],chatLast:0,unread:0,chatT:0,chatBusy:false,chatAgain:false,chatSentT:0,chatOff:false,dmOff:false,dmWasOff:false,dmRetry:0,
+  closed:false,admin:false,fr:{friends:new Set(),out:new Set(),inc:[],blocked:new Set()},frSeen:new Set(),frT:0,admT:0,adm:null,admSeen:new Set(),admTab:'pending',admLog:null,repT:0,gateTold:false,fc:0,fT:0,fps:0,rateIn:0,rateOut:0,rateT:0,rateS:null,
   saveBusy:false,saveAgain:false,tickT:0,plT:0,syncT:0,shipT:0,workAcc:0,joinT:0,metaKey:'',metaT:0,toldNet:0,myVote:null,openSeen:null,lastPeers:new Set(),homesKey:''};
 let SHARED=false;
 const sharedNow=()=>Date.now()+HSN.off;
@@ -3417,24 +3441,43 @@ function hsPub(){return{name:ST.name,look:ST.look,home:ST.home,job:ST.job?{id:ST
 async function hsSave(){if(!SHARED||!ST||!HSN.me)return;if(HSN.saveBusy){HSN.saveAgain=true;return;}HSN.saveBusy=true;
   try{ST.pos=[ME.x,ME.z];ST.saved=Date.now();const data=JSON.parse(JSON.stringify(ST));await NETB.save(HSN.me,data,hsPub());lastSave=performance.now();dirty=false;}
   catch(e){hsNetErr(e);}finally{HSN.saveBusy=false;if(HSN.saveAgain){HSN.saveAgain=false;setTimeout(hsSave,1500);}}}
-function hsNetErr(e){const t=performance.now();if(t-HSN.toldNet>60000){HSN.toldNet=t;toast('Ingen kontakt med det gemensamma skeppet just nu. Spelet fortsätter och sparar när kontakten är tillbaka.','warn');}try{console.warn('[hs]',e);}catch(_){}}
+function hsNetErr(e){if(hsGate(e))return;const t=performance.now();if(t-HSN.toldNet>60000){HSN.toldNet=t;toast('Ingen kontakt med det gemensamma skeppet just nu. Spelet fortsätter och sparar när kontakten är tillbaka.','warn');}try{console.warn('[hs]',e);}catch(_){}}
+
+/* the ship turned this player away (an adult blocked them, or they still wait to be let in) */
+function hsGate(e){const m=String(e&&e.message||e);if(!/^(blocked|pending)$/.test(m))return false;if(!SHARED||HSN.gateTold)return true;HSN.gateTold=true;
+  toast(m==='blocked'?'Din figur är avstängd från skeppet just nu. Prata med den vuxna som driver skeppet.':'Din figur väntar på att en vuxen ska släppa in den.','warn');hsLeave().then(showStart);return true;}
 
 /* ---------- entering and leaving ---------- */
 async function hsSync(){const r=await NETB.now();HSN.off=r.server-r.local;HSN.rtt=r.rtt;}
-async function hsStatus(){/* for the start screen */const out={ok:false};try{await hsSync();const pl=await NETB.players();out.ok=true;out.players=pl.length;out.t=sharedT();const me=HSID.get();out.has=!!(me&&pl.some(p=>p.id===me.id));out.mine=me&&pl.find(p=>p.id===me.id);}catch(e){out.err=String(e&&e.message||e);}return out;}
+async function hsStatus(){/* for the start screen */const out={ok:false};try{await hsSync();out.ok=true;out.t=sharedT();const me=HSID.get();
+    let s=null;if(me&&NETB.status){try{s=await NETB.status(me);}catch(e){const m=String(e&&e.message||e);if(/^auth$/.test(m)){out.has=false;s=false;}else if(!chatMissing(e))throw e;}}
+    if(s){out.closed=!!s.closed;out.has=true;out.st=s.status||'ok';out.admin=!!s.admin;out.mine={name:s.name};}
+    else if(s===null){/* a server without the closed ship: everyone who registered can board */const pl=await NETB.players();out.players=pl.length;out.mine=me&&pl.find(p=>p.id===me.id);out.has=!!out.mine;out.st='ok';
+      if(!me){try{const sh=await NETB.ship();out.closed=!!sh.closed;}catch(e){}}}}
+  catch(e){out.ok=false;out.err=String(e&&e.message||e);}return out;}
 function hsPrep(st,home){st.shared=true;st.slot='hs';st.npcSeed=HS_SEED;st.home=home;st.speed=1;st.prel=st.prel||{};st.eco=st.eco||{};st.eco.wxAuto=false;return st;}
 async function hsCreate(c){const me=HSID.get()||HSID.make();HSN.me=me;await hsSync();const r=await NETB.register(me,c.name);
   const st=defaultState();st.name=c.name;st.age=c.age;st.look=Object.assign({},c.look);st.traits=c.traits.slice();st.goal=c.goal;st.t=sharedT();st.lastYear=1+Math.floor(Math.floor(st.t/1440)/168);hsPrep(st,r.home);
-  hsStart(st,true,null);}
+  if(r.closed){try{const s=await NETB.status(me);if(s&&s.name)st.name=s.name;}catch(e){}}
+  if(r.status&&r.status!=='ok'){/* the ship is closed: the figure waits until an adult lets it in */st.fresh=true;
+    await NETB.save(me,JSON.parse(JSON.stringify(st)),{name:st.name,look:st.look,home:st.home,v:1});showStart();
+    toast(st.name+' är skapad! En vuxen på skeppet behöver släppa in dig innan du kan gå ombord.','big');return;}
+  HSN.closed=!!r.closed;HSN.admin=false;hsStart(st,true,null);}
 async function hsBoard(){const me=HSID.get();if(!me)return false;HSN.me=me;await hsSync();const L=await NETB.load(me);if(!L||!L.save)return false;
-  const st=hsPrep(L.save,(L.pub&&L.pub.home)||L.save.home);hsStart(st,false,st.t);return true;}
+  if(L.status&&L.status!=='ok'){toast(L.status==='blocked'?'Din figur är avstängd från skeppet just nu.':'Din figur väntar fortfarande på att en vuxen ska släppa in den.','warn');return false;}
+  HSN.closed=!!L.closed;HSN.admin=!!L.admin;const st=hsPrep(L.save,(L.pub&&L.pub.home)||L.save.home);const fresh=!!st.fresh;delete st.fresh;if(fresh)st.t=sharedT();
+  hsStart(st,fresh,fresh?null:st.t);return true;}
 function hsStart(st,isNew,tSaved){SHARED=true;document.body.classList.add('shared');paused=false;startEl.hidden=true;createEl.hidden=true;
   beginPlay(st,isNew);/* beginPlay → startGame → econInit, buildNPCs (fixed cabins), saves via hsSave */
   const now=sharedT();let rep=null;if(tSaved!=null&&now>ST.t+1)rep=hsCatchup(ST.t,now);else ST.t=now;
   setWeather(hsWeatherAt(ST.t));ST.lastYear=Math.max(ST.lastYear||1,shipYear());catchupToast(rep);
-  HSN.joinT=performance.now();HSN.rem.forEach(remDrop);HSN.rem.clear();HSN.openSeen=null;HSN.workAcc=0;HSN.chat=[];HSN.chatLast=0;HSN.unread=0;HSN.chatT=performance.now()+15000;updateChatBadge();
+  HSN.joinT=performance.now();HSN.rem.forEach(remDrop);HSN.rem.clear();HSN.openSeen=null;HSN.workAcc=0;HSN.chat=[];HSN.chatLast=0;HSN.unread=0;HSN.chatT=performance.now()+15000;HSN.gateTold=false;
+  HSN.fr={friends:new Set(),out:new Set(),inc:[],blocked:new Set()};HSN.frT=performance.now()+60000;HSN.admT=performance.now()+30000;HSN.repT=performance.now()+120000;updateChatBadge();
   const rt=NETB.rt;rt.onSync(hsOnSync);rt.onConn(c=>{HSN.conn=c;});rt.on('mv',hsOnMv);rt.on('say',hsOnSay);rt.on('soc',hsOnSoc);rt.on('fx',hsOnFx);rt.on('ship',()=>{HSN.shipT=performance.now()+800;});rt.on('chat',()=>{setTimeout(()=>hsChatPull(false),40+Math.random()*160);});
-  rt.join(HSN.me.id,hsMeta());hsRefreshShip(true);hsLoadPlayers();hsChatPull(true);setTimeout(hsSave,2500);}
+  rt.on('fr',m=>{if(m&&m.to===HSN.me.id)hsLoadFriends();});rt.on('kick',m=>{if(m&&m.to===HSN.me.id)NETB.status(HSN.me).then(s=>{if(s&&s.status!=='ok')hsGate(new Error(s.status));}).catch(()=>{});});
+  const priv=HSN.closed&&!!(NETB.authed&&NETB.authed());rt.join(HSN.me.id,hsMeta(),{priv});
+  if(HSN.closed&&!priv)setTimeout(()=>{if(SHARED&&!(NETB.authed&&NETB.authed()))toast('Kunde inte logga in säkert på skeppet, så du ser inte de andra just nu. Ladda om sidan om en stund.','warn');},1500);
+  hsRefreshShip(true);hsLoadPlayers();hsChatPull(true);if(HSN.closed){hsLoadFriends();hsMyReports();if(HSN.admin)hsAdminPoll();}setTimeout(hsSave,2500);}
 async function hsLeave(){if(!SHARED)return;try{await hsSave();}catch(e){}try{NETB.rt.leave();}catch(e){}HSN.rem.forEach(remDrop);HSN.rem.clear();freeDyn('rhomes');HSN.homesKey='';SHARED=false;paused=true;document.body.classList.remove('shared');}   /* nothing runs on solo rules until the start screen or the next boarding */
 
 /* ---------- realtime ---------- */
@@ -3529,7 +3572,7 @@ const PSOC={
 const prel=uid=>(ST.prel&&ST.prel[uid])||0;
 const prelLabel=uid=>{const v=prel(uid);return v>=50?'God vän':v>=20?'Kompis':v>0?'Bekant':'Ny';};
 function hsSay(i){if(!SHARED||!(i>=0&&i<SAYS.length))return;say(ME.person,SAYS[i],2.8);NETB.rt.send('say',{u:HSN.me.id,i});}
-function hsOnSay(m){const r=m&&HSN.rem.get(m.u);if(!r||!(m.i>=0&&m.i<SAYS.length))return;say(r.person,SAYS[m.i],2.8);}
+function hsOnSay(m){const r=m&&HSN.rem.get(m.u);if(!r||!(m.i>=0&&m.i<SAYS.length)||isBlocked(m.u))return;say(r.person,SAYS[m.i],2.8);}
 function hsSocial(r,k,g){const d=PSOC[k];if(!d||!r)return;if(!r.online){toast(r.name+' är inte inloggad just nu.');return;}
   if(d.min&&prel(r.uid)<d.min){toast('Ni behöver känna varandra lite bättre först.');return;}
   if(k==='vinka'||k==='bjud'){ME.h=Math.atan2(r.x-ME.x,r.z-ME.z);startMicro(ME.person,d.m);hsSay(d.say[0]);NETB.rt.send('soc',{u:HSN.me.id,to:r.uid,k,z:ST.home});ST.prel[r.uid]=clamp(prel(r.uid)+d.rel,0,100);if(k==='bjud')toast('Du bjöd hem '+r.name+'.','social');return;}
@@ -3543,7 +3586,8 @@ on('begin',d=>{const a=d.a;if(!a.psoc||!SHARED)return;const r=HSN.rem.get(a.psoc
   NETB.rt.send('soc',{u:HSN.me.id,to:a.psoc.uid,k:a.psoc.k,g:a.psoc.g||null});});
 on('act',d=>{const a=d.a;if(!a||!a.psoc||!SHARED)return;const D=PSOC[a.psoc.k];ST.prel[a.psoc.uid]=clamp(prel(a.psoc.uid)+D.rel*relMul()*fxRel(),0,100);{const E=ST.eco;E.soc=(E.soc||[]).filter(t=>ST.t-t<120);E.soc.push(ST.t);if(E.soc.length>=3)giveFx('pratglad',180);}
   const r=HSN.rem.get(a.psoc.uid);if(r)toast(r.name+': '+prelLabel(r.uid)+' ('+Math.round(prel(r.uid))+')','social');if(a.psoc.k==='present')wishEvent('gift');});
-function hsOnSoc(m){if(!SHARED||!m||m.to!==HSN.me.id||!PSOC[m.k])return;const r=HSN.rem.get(m.u);const nm=r?r.name:'Någon';const D=PSOC[m.k];
+const isBlocked=uid=>HSN.fr.blocked.has(uid)||hsMuted().has(uid);
+function hsOnSoc(m){if(!SHARED||!m||m.to!==HSN.me.id||!PSOC[m.k]||isBlocked(m.u))return;const r=HSN.rem.get(m.u);const nm=r?r.name:'Någon';const D=PSOC[m.k];
   addNeed('social',D.recv);ST.prel[m.u]=clamp(prel(m.u)+D.rel,0,100);
   if(m.k==='present'&&GB[m.g]){ST.inv['g_'+m.g]=Math.min(9,(ST.inv['g_'+m.g]||0)+1);toast(nm+' gav dig '+GB[m.g].give+'! Den ligger i fickan.','social');}
   else if(m.k==='bjud'){const z=ZB[m.z];if(z&&z.cabin)toast(nm+' bjuder hem dig till sin hytt.','social',{label:'Gå dit',fn:()=>{closePanels();walkToZone(m.z);}});}
@@ -3588,6 +3632,7 @@ function hsTick(dt,dm){if(!SHARED||!ST)return;const now=performance.now();
   if(now>HSN.plT){HSN.plT=now+60000;if(HSN.joinT&&now-HSN.joinT>1500)hsLoadPlayers();}
   if(now>HSN.syncT){HSN.syncT=now+60000;if(HSN.joinT&&now-HSN.joinT>1000)hsSync().catch(()=>{});}
   if(HSN.dmOff&&now>HSN.dmRetry){HSN.dmOff=false;}
+  if(HSN.closed){if(now>HSN.frT){HSN.frT=now+60000;hsLoadFriends();}if(HSN.admin&&now>HSN.admT){HSN.admT=now+30000;hsAdminPoll();}if(now>HSN.repT){HSN.repT=now+120000;hsMyReports();}}
   if(now>HSN.chatT){HSN.chatT=now+15000;hsChatPull(false);}
   HSN.fc++;if(now-HSN.fT>2000){const el_=(now-HSN.fT)/1000,S=NETB.rt.stats?NETB.rt.stats():null;HSN.fps=Math.round(HSN.fc/el_);HSN.fc=0;
     if(S&&HSN.rateS){HSN.rateIn=(S.mvIn-HSN.rateS.mvIn)/el_;HSN.rateOut=(S.mvOut-HSN.rateS.mvOut)/el_;}HSN.rateS=S;HSN.fT=now;}
@@ -3635,16 +3680,17 @@ async function hsChatSend(text,to){const b=hsCleanChat(text);if(!b||!SHARED)retu
   catch(e){const m=String(e&&e.message||e);
     if(chatMissing(e)){if(to){HSN.dmOff=HSN.dmWasOff=true;HSN.dmRetry=performance.now()+300000;toast('Privata meddelanden slås på snart.','info');return false;}
       HSN.chatOff=true;const i=SAYS.indexOf(b);if(i>=0){hsSay(i);return true;}toast('Fritextchatten är inte påslagen på skeppet än.','info');return false;}
-    if(/rate/.test(m))toast('Du skriver lite för snabbt – vänta några sekunder.','info');else if(/\bto\b/.test(m))toast('Det gick inte att skicka till den spelaren.','info');else if(!/empty/.test(m))hsNetErr(e);return false;}}
+    if(/rate/.test(m))toast('Du skriver lite för snabbt – vänta några sekunder.','info');else if(/notfriend/.test(m)){toast('Ni behöver vara vänner för att skriva privat.','info');hsLoadFriends();}else if(/blocked_pair/.test(m))toast('Det går inte att skriva till den spelaren.','info');else if(/\bto\b/.test(m))toast('Det gick inte att skicka till den spelaren.','info');else if(!/empty/.test(m))hsNetErr(e);return false;}}
 function chatLine(c){const t=new Date(c.t);const hm=isNaN(t)?'':String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');const mine=c.u===HSN.me.id;
-  return el('div',{class:'cl'+(mine?' me':'')},el('b',null,mine?'Du':c.n),el('span',{class:'tx'},c.b),el('i',null,hm));}
+  const line=el('div',{class:'cl'+(mine?' me':'')},el('b',null,mine?'Du':c.n),el('span',{class:'tx'},c.b),el('i',null,hm));
+  if(!mine&&HSN.closed)line.appendChild(el('button',{type:'button',class:'flag','aria-label':'Rapportera meddelandet',title:'Rapportera',onclick:e=>{e.stopPropagation();openReport(c.u,c.n,c.id,c.b);}},'⚑'));return line;}
 function renderChatLog(){const L=document.getElementById('chatlog');if(!L)return;const mute=hsMuted();L.innerHTML='';
   const rows=HSN.chat.filter(c=>!c.to&&!mute.has(c.u)).slice(-60);
   if(!rows.length)L.appendChild(el('p',{class:'muted small'},'Inga meddelanden än. Säg hej!'));
   for(const c of rows)L.appendChild(chatLine(c));L.scrollTop=L.scrollHeight;if(chatOpen()){HSN.unread=0;updateChatBadge();}}
 function renderDmLog(){const L=document.getElementById('dmlog');if(!L||!HSN.me)return;const uid=L.dataset.uid,me=HSN.me.id;L.innerHTML='';
   const rows=HSN.chat.filter(c=>c.to&&((c.u===me&&c.to===uid)||(c.u===uid&&c.to===me))).slice(-60);
-  if(!rows.length)L.appendChild(el('p',{class:'muted small'},HSN.dmOff?'Privata meddelanden slås på snart.':'Skriv något – bara ni två ser det.'));
+  if(!rows.length)L.appendChild(el('p',{class:'muted small'},HSN.dmOff?'Privata meddelanden slås på snart.':HSN.closed?'Bara ni två ser det här i spelet. En vuxen som driver skeppet kan läsa chatten.':'Skriv något – bara ni två ser det.'));
   for(const c of rows)L.appendChild(chatLine(c));L.scrollTop=L.scrollHeight;if(dmOpen(uid))dmMarkRead(uid);}
 function updateChatBadge(){const b=document.getElementById('btnSay');if(!b)return;let k=b.querySelector('.badge');const n=HSN.unread+Object.values(dmUnread()).reduce((a,c)=>a+c,0);
   if(!n){if(k)k.remove();return;}if(!k){k=el('i',{class:'badge'});b.appendChild(k);}k.textContent=n>9?'9+':String(n);}
@@ -3673,15 +3719,86 @@ function dmBox(uid,name,online){const box=el('div',{class:'dmbox'});box.appendCh
   box.appendChild(el('div',{class:'chatrow'},inp,btn));
   if(!online)box.appendChild(el('p',{class:'muted small'},name+' är inte inloggad och läser det nästa gång.'));return box;}
 function openDm(uid,name){const r=HSN.rem.get(uid);if(r){openRemoteFor(r);return;}const p=HSN.players.find(x=>x.id===uid);const nm=name||(p&&p.name)||'?';
-  closePanels();const body=el('div');body.appendChild(dmBox(uid,nm,false));showDialog(nm,body,[['Stäng',null,'ghost']]);renderDmLog();}
+  closePanels();const body=el('div');body.appendChild(HSN.closed?friendArea(uid,nm,false):dmBox(uid,nm,false));showDialog(nm,body,HSN.closed?personButtons(uid,nm,null):[['Stäng',null,'ghost']]);renderDmLog();}
 function hsPick(ray){const L=[];HSN.rem.forEach(r=>{if(r.person.root.visible&&r.person.hit)L.push(r);});if(!L.length)return null;const hits=ray.intersectObjects(L.map(r=>r.person.hit),false);if(!hits.length)return null;return L.find(r=>r.person.hit===hits[0].object)||null;}
+const frState=uid=>{const F=HSN.fr;return F.blocked.has(uid)?'blocked':F.friends.has(uid)?'friends':F.inc.some(x=>x.id===uid)?'in':F.out.has(uid)?'out':'none';};
+function friendArea(uid,name,online){const st=frState(uid);const box=el('div',{class:'frbox','data-uid':uid});const btn=(t,fn,cls)=>el('button',{type:'button',class:'btn'+(cls?' '+cls:''),onclick:fn},t);
+  if(!HSN.closed||HSN.dmOff||st==='friends'){if(st==='friends')box.appendChild(el('p',{class:'muted small frok'},'✓ Ni är vänner'));box.appendChild(dmBox(uid,name,online));return box;}
+  if(st==='blocked'){box.appendChild(el('p',{class:'small'},'Du har blockerat '+name+'. Ni kan inte skriva till varandra och '+name+' kan inte göra saker med dig.'));box.appendChild(el('div',{class:'row'},btn('Sluta blockera',()=>hsBlock(uid,false,name),'ghost')));return box;}
+  if(st==='in'){box.appendChild(el('p',{class:'small'},name+' vill bli din vän. Säg bara ja om du vet vem det är i verkligheten.'));box.appendChild(el('div',{class:'row'},btn('Ja, bli vänner',()=>hsFriend(uid,true,name)),btn('Nej tack',()=>hsFriend(uid,false,name),'ghost')));return box;}
+  if(st==='out'){box.appendChild(el('p',{class:'small'},'Du har frågat '+name+' om ni ska bli vänner. När '+name+' säger ja kan ni skriva privat.'));box.appendChild(el('div',{class:'row'},btn('Ångra',()=>hsFriend(uid,false,name),'ghost')));return box;}
+  box.appendChild(el('p',{class:'small'},'Privata meddelanden går bara mellan vänner. Bli bara vän med folk du känner i verkligheten.'));box.appendChild(el('div',{class:'row'},btn('Fråga om ni ska bli vänner',()=>hsFriend(uid,true,name))));return box;}
 function openRemoteFor(r){closePanels();const body=el('div');body.appendChild(el('p',{class:'muted'},(r.online?'Spelare ombord':'Utloggad – lever på som vanligt')+' · '+prelLabel(r.uid)+(r.pub&&r.pub.title?' · '+r.pub.title:'')));
-  body.appendChild(dmBox(r.uid,r.name,r.online));const c=el('div',{class:'alist'});
-  if(r.online){for(const k of['vinka','prata','skamta','krama','bjud']){const d=PSOC[k];const why=d.min&&prel(r.uid)<d.min?'Kräver att ni är kompisar':null;c.appendChild(actBtn(d.n+' '+r.name,k==='bjud'?'till din hytt':k==='vinka'?'nu':Math.round(d.dur*2.5)+' s',why,()=>hsSocial(r,k)));}
+  body.appendChild(friendArea(r.uid,r.name,r.online));const c=el('div',{class:'alist'});const blocked=frState(r.uid)==='blocked';
+  if(r.online&&!blocked){for(const k of['vinka','prata','skamta','krama','bjud']){const d=PSOC[k];const why=d.min&&prel(r.uid)<d.min?'Kräver att ni är kompisar':null;c.appendChild(actBtn(d.n+' '+r.name,k==='bjud'?'till din hytt':k==='vinka'?'nu':Math.round(d.dur*2.5)+' s',why,()=>hsSocial(r,k)));}
     for(const g of GIFTS)if((ST.inv['g_'+g.id]||0)>0)c.appendChild(actBtn('Ge '+g.give+' till '+r.name,'present',null,()=>hsSocial(r,'present',g.id)));}
-  else c.appendChild(el('p',{class:'small'},r.name+' är inte inloggad. Du kan hälsa på när '+r.name+' är ombord igen.'));
-  body.appendChild(c);const muted=hsMuted().has(r.uid);const far=Math.hypot(r.x-ME.x,r.z-ME.z)>4;
-  showDialog(r.name,body,[[muted?'Sluta tysta':'Tysta',()=>{hsSetMute(r.uid,!muted);toast(muted?'Du ser '+r.name+'s meddelanden igen.':'Du ser inte längre '+r.name+'s meddelanden.','info');renderChatLog();updateChatBadge();},'ghost']].concat(far?[['Gå dit',()=>{cancelAction(true);goTo(r.x,r.z+1.2,null,r.name);},'ghost']]:[],[['Stäng',null,'ghost']]));renderDmLog();}
+  else if(!r.online)c.appendChild(el('p',{class:'small'},r.name+' är inte inloggad. Du kan hälsa på när '+r.name+' är ombord igen.'));
+  body.appendChild(c);const far=Math.hypot(r.x-ME.x,r.z-ME.z)>4;showDialog(r.name,body,personButtons(r.uid,r.name,far?()=>{cancelAction(true);goTo(r.x,r.z+1.2,null,r.name);}:null));renderDmLog();}
+function personButtons(uid,name,goFn){const B=[];
+  if(HSN.closed){B.push(['Rapportera',()=>openReport(uid,name,null,null),'ghost']);const blocked=frState(uid)==='blocked';if(!blocked)B.push(['Blockera',()=>confirmBox('Blockera '+name+'? Ni kan inte skriva till varandra och '+name+' kan inte göra saker med dig. '+name+' får inte veta det.','Blockera',()=>hsBlock(uid,true,name)),'ghost']);
+    if(frState(uid)==='friends')B.push(['Ta bort vän',()=>hsFriend(uid,false,name),'ghost']);}
+  else{const muted=hsMuted().has(uid);B.push([muted?'Sluta tysta':'Tysta',()=>{hsSetMute(uid,!muted);toast(muted?'Du ser '+name+'s meddelanden igen.':'Du ser inte längre '+name+'s meddelanden.','info');renderChatLog();updateChatBadge();},'ghost']);}
+  if(goFn)B.push(['Gå dit',goFn,'ghost']);B.push(['Stäng',null,'ghost']);return B;}
+function reopenPerson(uid,name){if(!dlg.hidden&&document.getElementById('dialog').querySelector('.frbox,#dmlog'))openDm(uid,name);}
+async function hsLoadFriends(){if(!HSN.closed||!NETB.friends||!HSN.me)return;try{const f=await NETB.friends(HSN.me);const F=HSN.fr;const key=JSON.stringify([f.friends,f.out,f.in,f.blocked]);
+    F.friends=new Set(f.friends||[]);F.out=new Set(f.out||[]);F.inc=f.in||[];F.blocked=new Set(f.blocked||[]);if(f.admin!=null)HSN.admin=!!f.admin;
+    for(const x of F.inc)if(!HSN.frSeen.has(x.id)){HSN.frSeen.add(x.id);toast(x.n+' vill bli din vän.','social',{label:'Svara',fn:()=>openDm(x.id,x.n)});}
+    if(key!==HSN.frKey){const open=document.getElementById('dialog').querySelector('.frbox');const uid=open&&!dlg.hidden?(document.getElementById('dmlog')||{dataset:{}}).dataset.uid||open.dataset.uid:null;HSN.frKey=key;if(uid){const r=HSN.rem.get(uid);if(r)openRemoteFor(r);}}
+    updateChatBadge();}catch(e){hsNetErr(e);}}
+async function hsFriend(uid,on,name){try{const st=await NETB.friendSet(HSN.me,uid,on);NETB.rt.send('fr',{to:uid});
+    toast(on?(st==='friends'?'Du och '+name+' är vänner nu! Nu kan ni skriva privat.':'Frågan är skickad. När '+name+' säger ja kan ni skriva privat.'):'Okej, ni är inte vänner.','social');
+    await hsLoadFriends();reopenPerson(uid,name);}
+  catch(e){const m=String(e&&e.message||e);if(/blocked_pair/.test(m))toast('Det går inte just nu.','info');else if(/rate/.test(m))toast('Du har frågat många just nu. Vänta en stund.','info');else hsNetErr(e);}}
+async function hsBlock(uid,on,name){try{if(HSN.closed)await NETB.blockSet(HSN.me,uid,on);hsSetMute(uid,on);NETB.rt.send('fr',{to:uid});
+    toast(on?'Du har blockerat '+name+'.':'Du har slutat blockera '+name+'.','info');await hsLoadFriends();renderChatLog();updateChatBadge();reopenPerson(uid,name);}catch(e){hsNetErr(e);}}
+const REASONS=['Elak eller retas','Obehaglig eller läskig','Vill ha kontaktuppgifter eller träffas','Något annat'];
+function openReport(uid,name,msgId,text){closePanels();const body=el('div');
+  body.appendChild(el('p',null,msgId?'Vill du rapportera det här meddelandet från '+name+'?':'Vill du rapportera '+name+'?'));
+  if(text)body.appendChild(el('blockquote',{class:'repq'},text));
+  body.appendChild(el('p',{class:'small muted'},'En vuxen på skeppet får se det och tittar på det så snart som möjligt. '+name+' får inte veta vem som rapporterade. Vad hände?'));
+  const g=el('div',{class:'alist'});for(const x of REASONS)g.appendChild(el('button',{type:'button',class:'abtn',onclick:()=>sendReport(uid,name,msgId,x)},el('b',null,x)));body.appendChild(g);
+  showDialog('Rapportera',body,[['Avbryt',null,'ghost']]);}
+async function sendReport(uid,name,msgId,reason){closePanels();try{await NETB.report(HSN.me,uid,msgId,reason);
+    toast('Tack! En vuxen tittar på det. Du kan också blockera '+name+'.','info',frState(uid)==='blocked'?null:{label:'Blockera',fn:()=>hsBlock(uid,true,name)});}
+  catch(e){const m=String(e&&e.message||e);if(/rate/.test(m))toast('Du har skickat många rapporter. En vuxen tittar på dem.','info');else hsNetErr(e);}}
+async function hsMyReports(){if(!HSN.closed||!NETB.myReports||!HSN.me)return;try{const L=await NETB.myReports(HSN.me);const k='hs-repseen-'+HSN.me.id;let seen=[];try{seen=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){}
+    for(const r of L||[]){if(seen.includes(r.id))continue;seen.push(r.id);toast('En vuxen har tittat på din rapport om '+r.n+'.'+(r.outcome?' '+r.outcome:''),'info');}
+    try{localStorage.setItem(k,JSON.stringify(seen.slice(-100)));}catch(e){}}catch(e){hsNetErr(e);}}
+
+/* ---------- the adults' view: who waits, reports, players, the chat log ---------- */
+const admOpen=()=>{const b=document.getElementById('admbody');return!!(b&&b.isConnected&&!dlg.hidden);};
+async function hsAdminPoll(){if(!HSN.admin||!NETB.adminOverview)return;try{const o=await NETB.adminOverview(HSN.me);HSN.adm=o;
+    for(const p of o.pending||[])if(!HSN.admSeen.has('p'+p.id)){HSN.admSeen.add('p'+p.id);toast(p.n+' vill komma ombord.','big',{label:'Visa',fn:()=>openAdmin('pending')});}
+    for(const r of o.reports||[])if(!HSN.admSeen.has('r'+r.id)){HSN.admSeen.add('r'+r.id);toast('Ny rapport: '+r.from+' om '+r.n+'.','warn',{label:'Visa',fn:()=>openAdmin('reports')});}
+    if(admOpen())renderAdmin();}catch(e){if(/admin/.test(String(e&&e.message)))HSN.admin=false;else hsNetErr(e);}}
+async function admDo(fn,ok){try{await fn();if(ok)toast(ok,'info');}catch(e){toast('Det gick inte: '+(e.message||e),'warn');}await hsAdminPoll();if(HSN.admTab==='log')await admLoadLog();renderAdmin();}
+async function admLoadLog(before){try{const L=await NETB.adminChatlog(HSN.me,before==null?null:before);HSN.admLog=before==null?L:(L||[]).concat(HSN.admLog||[]);}catch(e){HSN.admLog=[];}}
+function openAdmin(tab){if(!HSN.admin)return;closePanels();HSN.admTab=tab||HSN.admTab||'pending';const body=el('div');body.appendChild(el('div',{class:'chips admtabs',id:'admtabs'}));body.appendChild(el('div',{id:'admbody'}));
+  showDialog('Vuxenläge',body,[['Stäng',null,'ghost']]);renderAdmin();hsAdminPoll();if(HSN.admTab==='log')admLoadLog().then(renderAdmin);}
+function renderAdmin(){const T=document.getElementById('admtabs'),B=document.getElementById('admbody');if(!T||!B)return;const o=HSN.adm||{pending:[],reports:[],players:[]};const me=HSN.me.id;
+  const tabs=[['pending','Väntar',o.pending.length],['reports','Rapporter',o.reports.length],['players','Spelare',0],['log','Chattlogg',0]];T.innerHTML='';
+  for(const[id,n,c]of tabs)T.appendChild(el('button',{type:'button',class:'chip','aria-pressed':String(HSN.admTab===id),onclick:()=>{HSN.admTab=id;if(id==='log')admLoadLog().then(renderAdmin);renderAdmin();}},n,c?el('i',{class:'dot'},String(c)):null));
+  B.innerHTML='';const tm=t=>{const d=new Date(t);return isNaN(d)?'':d.toLocaleString('sv-SE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});};
+  const row=(title,sub,btns,quote)=>{const c=el('div',{class:'card admrow'},el('b',null,title),sub?el('span',{class:'muted small'},sub):null,quote?el('blockquote',{class:'repq'},quote):null);if(btns&&btns.length)c.appendChild(el('div',{class:'row'},btns));return c;};
+  const b=(t,fn,cls)=>el('button',{type:'button',class:'btn'+(cls?' '+cls:''),onclick:fn},t);
+  if(HSN.admTab==='pending'){B.appendChild(el('p',{class:'small muted'},'Släpp bara in den du vet vem det är. Neka stänger av figuren.'));if(!o.pending.length)B.appendChild(el('p',{class:'muted small'},'Ingen väntar just nu.'));
+    for(const p of o.pending)B.appendChild(row(p.n,'Ville komma ombord '+tm(p.t),[b('Släpp in',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{status:'ok'}),p.n+' är insläppt.')),b('Neka',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{status:'blocked'}),p.n+' är nekad.'),'ghost')]));}
+  else if(HSN.admTab==='reports'){if(!o.reports.length)B.appendChild(el('p',{class:'muted small'},'Inga nya rapporter.'));
+    for(const r of o.reports){const done=t=>()=>admDo(()=>NETB.adminReport(HSN.me,r.id,t),'Rapporten är klar.');
+      const btns=[b('Vi har pratat om det',done('Vi har pratat om det.'),'ghost'),b('Inget fel hittades',done('Vi tittade och hittade inget fel.'),'ghost')];
+      if(r.target&&r.target!==me)btns.push(b('Stäng av '+r.n,()=>admDo(async()=>{await NETB.adminPlayer(HSN.me,r.target,{status:'blocked'});NETB.rt.send('kick',{to:r.target});await NETB.adminReport(HSN.me,r.id,'En vuxen har stängt av '+r.n+'.');},r.n+' är avstängd.')));
+      if(r.msg)btns.push(b('Ta bort meddelandet',()=>admDo(()=>NETB.adminDeleteMsg(HSN.me,r.msg),'Meddelandet är borttaget.'),'ghost'));
+      B.appendChild(row(r.from+' rapporterade '+r.n,(r.reason||'')+' · '+tm(r.t),btns,r.body||null));}}
+  else if(HSN.admTab==='players'){for(const p of o.players){const self=p.id===me;const st={ok:'ombord',pending:'väntar',blocked:'avstängd'}[p.status]||p.status;const btns=[];
+      if(!self){if(p.status==='ok')btns.push(b('Stäng av',()=>admDo(async()=>{await NETB.adminPlayer(HSN.me,p.id,{status:'blocked'});NETB.rt.send('kick',{to:p.id});},p.n+' är avstängd.'),'ghost'));else btns.push(b('Släpp in',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{status:'ok'}),p.n+' är insläppt.')));
+        btns.push(b(p.admin?'Inte vuxen':'Gör till vuxen',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{admin:!p.admin}),p.admin?p.n+' är inte längre vuxen.':p.n+' är nu vuxen.'),'ghost'));}
+      btns.push(b('Byt namn',()=>{const inp=el('input',{type:'text',maxlength:'18',value:p.n,class:'chatin'});const bd=el('div',null,inp);showDialog('Nytt namn för '+p.n,bd,[['Spara',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{name:inp.value}),'Namnet är ändrat.').then(()=>openAdmin('players'))],['Avbryt',()=>openAdmin('players'),'ghost']]);},'ghost'));
+      B.appendChild(row(p.n+(p.admin?' · vuxen':'')+(self?' (du)':''),st+' · senast '+tm(p.seen),btns));}}
+  else{const L=HSN.admLog;if(!L){B.appendChild(el('p',{class:'muted small'},'Hämtar chattloggen…'));return;}B.appendChild(el('p',{class:'small muted'},'Allt som skrivits de senaste 30 dagarna, även privata meddelanden.'));
+    if(!L.length)B.appendChild(el('p',{class:'muted small'},'Inga meddelanden.'));
+    const box=el('div',{class:'chatlog admlog'});for(const c of L.slice().reverse()){box.appendChild(el('div',{class:'cl'+(c.to?' priv':'')},el('b',null,c.n+' → '+(c.to?c.tn||'?':'alla')),el('span',{class:'tx'},c.b),el('i',null,tm(c.t)),
+      el('button',{type:'button',class:'flag',title:'Ta bort','aria-label':'Ta bort meddelandet',onclick:()=>confirmBox('Ta bort meddelandet från '+c.n+'?','Ta bort',()=>admDo(()=>NETB.adminDeleteMsg(HSN.me,c.id),'Meddelandet är borttaget.').then(()=>openAdmin('log')))},'✕')));}
+    B.appendChild(box);if(L.length>=200)B.appendChild(b('Visa äldre',()=>admLoadLog(L[0].id).then(renderAdmin),'ghost'));}}
 function openSay(){if(!SHARED)return;closePanels();HSN.unread=0;updateChatBadge();const body=el('div',{class:'chatwrap'});
   const T=dmThreads(),U=dmUnread();if(T.length){const ch=el('div',{class:'chips dmchips'});for(const t of T.slice(0,8))ch.appendChild(el('button',{type:'button',class:'chip',onclick:()=>openDm(t.uid,t.name)},t.name,U[t.uid]?el('i',{class:'dot'},String(U[t.uid])):null));
     body.appendChild(el('h3',{class:'chath'},'Privata samtal'));body.appendChild(ch);body.appendChild(el('h3',{class:'chath'},'Alla ombord'));}
@@ -3692,7 +3809,7 @@ function openSay(){if(!SHARED)return;closePanels();HSN.unread=0;updateChatBadge(
   btn.addEventListener('click',send);inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send();}});
   body.appendChild(el('div',{class:'chatrow'},inp,btn));
   const g=el('div',{class:'chips saygrid'});SAY_QUICK.forEach((t,i)=>g.appendChild(el('button',{type:'button',class:'chip'+(i>=18?' emo':''),onclick:()=>hsChatSend(t)},t)));body.appendChild(g);
-  body.appendChild(el('p',{class:'muted small'},'Alla ombord kan läsa den här chatten. Vill du skriva till bara en person: tryck på figuren. Meddelanden sparas i tre dagar.'));
+  body.appendChild(el('p',{class:'muted small'},HSN.closed?'Alla ombord kan läsa den här chatten, och en vuxen som driver skeppet kan läsa all chatt. Skriv aldrig ditt telefonnummer, var du bor eller vad du heter i andra appar. Vill du skriva till bara en vän: tryck på figuren. Tryck ⚑ för att rapportera.':'Alla ombord kan läsa den här chatten. Vill du skriva till bara en person: tryck på figuren. Meddelanden sparas i tre dagar.'));
   showDialog('Chatt',body,[['Stäng',null,'ghost']]);renderChatLog();hsChatPull(false);}
 function hsCtx(x,z){const o=[];if(!SHARED)return o;HSN.rem.forEach(r=>{if(!r.online)return;const d=Math.hypot(r.x-x,r.z-z);if(d<2.2){o.push({d:d+0.1,ic:'hand',label:'Prata med '+r.name,fn:()=>hsSocial(r,'prata')});o.push({d:d+0.12,ic:'chat',label:'Skriv till '+r.name,fn:()=>openRemoteFor(r)});}else if(d<9)o.push({d:d*0.3+1.5,ic:'hand',label:'Vinka till '+r.name,fn:()=>hsSocial(r,'vinka')});});return o;}
 function hsActPeople(host){if(!SHARED)return;const near=[];HSN.rem.forEach(r=>{if(Math.hypot(r.x-ME.x,r.z-ME.z)<9)near.push(r);});if(!near.length)return;const sec=el('section',{class:'grp'},el('h3',null,'Spelare här'));
@@ -3713,6 +3830,8 @@ function hsMer(h){if(!SHARED)return;const me=HSN.me;h.appendChild(el('h3',null,'
   const S=NETB.rt.stats?NETB.rt.stats():{};const st=HSN.conn?'Ansluten':'Återansluter…';
   h.appendChild(el('div',{class:'card netcard'},el('b',null,'Anslutning: '+st),el('span',{class:'muted small'},
     'Svarstid '+Math.round(HSN.rtt||0)+' ms · '+HSN.fps+' uppdateringar/s · rörelser in '+HSN.rateIn.toFixed(1)+'/s, ut '+HSN.rateOut.toFixed(1)+'/s'+(S.rejoins?' · återanslöt '+S.rejoins+' gånger':'')+(S.lastClose&&!HSN.conn?' · '+S.lastClose:''))));
+  if(HSN.admin){const o=HSN.adm||{pending:[],reports:[]};h.appendChild(el('div',{class:'card'},el('b',null,'Vuxenläge'),el('span',{class:'muted small'},o.pending.length+' väntar på att släppas in · '+o.reports.length+' nya rapporter'),el('div',{class:'row'},el('button',{type:'button',class:'btn',onclick:()=>openAdmin(o.pending.length?'pending':o.reports.length?'reports':'players')},'Öppna vuxenläget'))));}
+  else if(HSN.closed)h.appendChild(el('p',{class:'small muted'},'Skeppet är stängt: nya spelare släpps in av en vuxen. Om någon är elak eller obehaglig: tryck på figuren och välj Rapportera eller Blockera.'));
   const code=HSID.code(me);const inp=el('input',{type:'text',readonly:true,value:code,class:'codebox','aria-label':'Flyttkod'});
   h.appendChild(el('div',{class:'card'},el('b',null,'Din flyttkod'),el('span',{class:'muted small'},'Med koden kan du spela samma figur på en annan enhet. Dela den inte med andra.'),inp,
     el('div',{class:'row'},el('button',{type:'button',class:'btn ghost',onclick:()=>{inp.select();try{navigator.clipboard.writeText(code).then(()=>toast('Flyttkoden är kopierad.','info'));}catch(e){document.execCommand&&document.execCommand('copy');}}},'Kopiera'),
@@ -3722,9 +3841,13 @@ async function hsStartCard(host){const card=el('div',{class:'slot shared'});host
   card.appendChild(el('div',{class:'slot-info'},el('b',null,'Gemensamma skeppet'),el('span',{id:'hsStat'},'Kontaktar skeppet…')));const btns=el('div',{class:'row'});card.appendChild(btns);
   const st=await hsStatus();const s=$('#hsStat');if(!s)return;
   if(!st.ok){s.textContent='Ingen kontakt just nu. Försök igen om en stund.';btns.appendChild(el('button',{type:'button',class:'btn ghost',onclick:()=>showStart()},'Försök igen'));return;}
-  const t=st.t;s.textContent=st.players+' '+(st.players===1?'spelare':'spelare')+' · skeppstid '+fmtT(t)+' '+DAYS[Math.floor(t/1440)%7].toLowerCase();
-  if(st.has){btns.appendChild(el('button',{type:'button',class:'btn',onclick:async e=>{e.target.disabled=true;startEl.hidden=true;try{if(!await hsBoard()){startEl.hidden=false;toast('Hittade ingen figur.');}}catch(err){startEl.hidden=false;e.target.disabled=false;$('#hsStat').textContent='Kunde inte gå ombord: '+(err.message||err);}}},'Gå ombord som '+(st.mine&&st.mine.name||'du')));}
-  else btns.appendChild(el('button',{type:'button',class:'btn',onclick:()=>openCreate('hs')},'Skapa din figur'));
+  const t=st.t;const clock='Skeppstid '+fmtT(t)+' '+DAYS[Math.floor(t/1440)%7].toLowerCase();const nm=st.mine&&st.mine.name||'Din figur';
+  s.textContent=(st.players!=null?st.players+' spelare · ':'')+clock;
+  if(st.has&&st.st==='pending'){s.textContent=nm+' väntar på att en vuxen på skeppet ska släppa in dig. '+clock;btns.appendChild(el('button',{type:'button',class:'btn ghost',onclick:()=>showStart()},'Kolla igen'));
+    clearTimeout(HSN.waitT);HSN.waitT=setTimeout(()=>{if(!startEl.hidden&&gameMode==='menu')showStart();},15000);}
+  else if(st.has&&st.st==='blocked'){s.textContent=nm+' är avstängd från skeppet. Prata med den vuxna som driver skeppet.';}
+  else if(st.has){btns.appendChild(el('button',{type:'button',class:'btn',onclick:async e=>{e.target.disabled=true;startEl.hidden=true;try{if(!await hsBoard()){startEl.hidden=false;toast('Hittade ingen figur.');}}catch(err){startEl.hidden=false;e.target.disabled=false;$('#hsStat').textContent='Kunde inte gå ombord: '+(err.message||err);}}},'Gå ombord som '+(st.mine&&st.mine.name||'du')));}
+  else{btns.appendChild(el('button',{type:'button',class:'btn',onclick:()=>openCreate('hs')},'Skapa din figur'));if(st.closed)s.textContent=clock+' · Nya spelare släpps in av en vuxen på skeppet.';}
   btns.appendChild(el('button',{type:'button',class:'btn ghost',onclick:()=>{const body=el('div');const inp=el('input',{type:'text',placeholder:'HS-…',class:'codebox'});body.appendChild(el('p',{class:'small'},'Klistra in flyttkoden från din andra enhet.'));body.appendChild(inp);
     showDialog('Flytta hit en figur',body,[['Flytta hit',()=>{const v=HSID.parse(inp.value);if(!v){$('#hsStat').textContent='Flyttkoden stämmer inte. Kontrollera att du fick med hela koden.';return;}HSID.set(v);showStart();}],['Avbryt',null,'ghost']]);}},'Har du en flyttkod?'));}
 
@@ -4088,7 +4211,7 @@ async function boot(hot){
   if(hot&&hot.st&&hot.st.look){startEl.hidden=true;beginPlay(hot.st,false);}else showStart();
 }
 {const H=window.claude&&window.claude.hot;const run=d=>{boot(d||{});};if(H&&typeof H.ready==='function')H.ready(run);else run(H&&H.data);}
-window.__game={hs:{HSN,HSID,hsCreate,hsSync,hsStatus,openRemoteFor,openSay,hsDonate,hsVote,hsCut,get SHARED(){return SHARED;},sharedT,hsCatchup,routineAt,sharedFunZone,hsWeatherAt,hsSocial,hsSay,hsBoard,hsLeave,hsRefreshShip,SAYS,NETB,hsChatSend,hsChatPull,hsMuted,hsSetMute,remSample,wrapChat,openDm,dmUnread,dmThreads},doSocial,socialReason,econ:{ECON,PROJ,PJ,HOME_UP,GIFTS,donate,startProject,buyHome,completeProj,cutRibbon,inaugurate,homeBuild,siteBuild,trophyList,trivsel,ribbonPos,giftScore,favGifts,econInvite,guestsFree,pStage,pStatus,socialFor,GIFT_SOC,PLATS,DYNS},errs:()=>ERRS,tick:dm=>{advanceTime(dm);decayNeeds(dm);if(ME.action)tickAction(dm);},saveNow,workAction,reason,get ST(){return ST;},ME,NPCS:()=>NPCS,doAction,AB,ZB,setWeather,openAct,openMenu,applyJob,findPath,goTo,beginPlay,defaultState,CAM,get mode(){return gameMode;},renderer,
+window.__game={hs:{HSN,HSID,hsCreate,hsSync,hsStatus,openRemoteFor,openSay,hsDonate,hsVote,hsCut,get SHARED(){return SHARED;},sharedT,hsCatchup,routineAt,sharedFunZone,hsWeatherAt,hsSocial,hsSay,hsBoard,hsLeave,hsRefreshShip,SAYS,NETB,hsChatSend,hsChatPull,hsMuted,hsSetMute,remSample,wrapChat,openDm,dmUnread,dmThreads,hsAdminPoll,openAdmin,hsMyReports,hsLoadFriends,hsFriend,hsBlock,showStart},doSocial,socialReason,econ:{ECON,PROJ,PJ,HOME_UP,GIFTS,donate,startProject,buyHome,completeProj,cutRibbon,inaugurate,homeBuild,siteBuild,trophyList,trivsel,ribbonPos,giftScore,favGifts,econInvite,guestsFree,pStage,pStatus,socialFor,GIFT_SOC,PLATS,DYNS},errs:()=>ERRS,tick:dm=>{advanceTime(dm);decayNeeds(dm);if(ME.action)tickAction(dm);},saveNow,workAction,reason,get ST(){return ST;},ME,NPCS:()=>NPCS,doAction,AB,ZB,setWeather,openAct,openMenu,applyJob,findPath,goTo,beginPlay,defaultState,CAM,get mode(){return gameMode;},renderer,
   applyQuality,setPose:n=>{setPose(ME.person,n);},snapPose:()=>snapPose(ME.person),startMicro:id=>startMicro(ME.person,id),CRIT,PETS,get TT(){return TT;},scene,camera,updateCamera,setHour:h=>{ST.t=Math.floor(ST.t/1440)*1440+h*60;},POSES,makePerson,animPerson,PROF,sun,floor,hemi,ctx:()=>ctxOptions(),COURSE,SLIDE,renderFrame,eco:{STATUS,HORSES,hs,giveFx,hasFx,fxList,activeEvents,EVENTS,refreshReqs,REQ_T,emit,npcNeeds,ecoFunZone,startNpcMech,npcMechSpot,isEvent,coursePaid,reqProgress},RX,reactPulse,emote,startMicroP:(p,id)=>startMicro(p,id),npcState,critterSense:()=>critterSense(playerStim())};
 
 }catch(err){console.error(err);fail('Något gick fel: '+(err&&err.message));}
