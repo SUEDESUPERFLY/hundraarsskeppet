@@ -1,7 +1,7 @@
 <!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0f1d"><title>Hundraårsskeppet</title><script>window.HS_CFG={"url": "https://akqpmbfueoiafokkxyct.supabase.co", "key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrcXBtYmZ1ZW9pYWZva2t4eWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNzkwNDIsImV4cCI6MjEwNzY1NTA0Mn0.0bnqACz2biMEfvZZtyQJ1LdZF1BeRQgpqq2_X9GbDBQ"};</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script></head><body><title>Livet på Hundraårsskeppet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@400;500;600&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@400;500;600&family=Patrick+Hand&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* Soft, rounded HUD: frosted cream glass over the 3D ship. Clock top-left, wallet top-right, ring meters for needs in between,
    Gör and the joystick at thumb height. Panels slide in as sheets (right on wide screens, up from the bottom on phones). */
@@ -320,6 +320,66 @@ body.lowfx .glass{background:rgba(255,250,243,.94)}body.lowfx .panel,body.lowfx 
   .toasts{bottom:calc(env(safe-area-inset-bottom,0px) + 138px);width:calc(100% - 20px)}.toast{padding:7px 10px 7px 12px;font-size:13px;border-radius:14px}.toast:nth-child(n+3){display:none}
 }
 @media (max-width:374px) and (min-height:521px){.clock .day{display:none}.speeds button{min-width:25px;padding:0 4px}.money b{font-size:15px}}
+/* Hopptävling – the minigame (pixel arena, Pokémon-style boxes, Final Fantasy-style command window) */
+.mini{position:fixed;inset:0;z-index:40;background:#0d1020;display:flex;flex-direction:column;font-family:'Pixelify Sans',var(--f-d);color:#1c1d33;touch-action:manipulation;-webkit-user-select:none;user-select:none;overflow:hidden}
+.mini[hidden],.mini-fx[hidden],.mini-go[hidden]{display:none}
+.mini-stage{position:relative;flex:none;width:100%;height:min(46vh,108vw);background:#000;overflow:hidden}
+.mini-stage canvas{width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.mini-hud{position:absolute;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 6px);display:flex;justify-content:space-between;gap:6px;font:600 13px/1 'Pixelify Sans',monospace;color:#fff;text-shadow:0 2px 0 #000;pointer-events:none}
+.mini-hud span:not(:empty){background:rgba(10,12,30,.6);padding:4px 7px;border-radius:6px}
+.mini-dots{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 31px);display:flex;gap:4px;pointer-events:none}
+.mini-dots i{width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.35);box-shadow:0 1px 0 #000}
+.mini-dots i.ok{background:#3fd06b}.mini-dots i.k{background:#ef5b5b}.mini-dots i.now{background:#ffd34d;transform:scale(1.3)}
+.mini-go{flex:none;width:100%;min-height:96px;font:700 30px/1 'Pixelify Sans',monospace;color:#fff;background:linear-gradient(#ff7a3d,#e0473c);border:3px solid #fff;border-radius:14px;padding:18px 22px;box-shadow:0 5px 0 #8e2418,0 8px 16px rgba(0,0,0,.4);animation:mgo .45s ease-in-out infinite alternate;touch-action:none;letter-spacing:1px}
+@keyframes mgo{to{transform:scale(1.03);filter:brightness(1.08)}}
+.mini-ui{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding:10px 12px calc(env(safe-area-inset-bottom,0px) + 12px);overflow-y:auto;touch-action:pan-y;background:linear-gradient(#171a33,#0d1020)}
+.mini-box{background:#fbfbf3;border:3px solid #2a2c4a;border-radius:10px;box-shadow:inset 0 0 0 2px #e6e3cf,0 3px 0 #05060f}
+.mini-info{padding:7px 10px;display:grid;gap:4px}
+.mi-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.mi-top b{font:700 16px/1 'Pixelify Sans',var(--f-d)}.mi-lv{font-size:11.5px;color:#555a7a}
+.mi-bar{display:grid;grid-template-columns:54px 1fr;align-items:center;gap:6px;font:700 11px/1 'Pixelify Sans',var(--f-d);color:#d08a1e}
+.mi-bar i{display:block;height:9px;background:#3b3f5c;border-radius:4px;border:2px solid #2a2c4a;overflow:hidden}
+.mi-bar em{display:block;height:100%;background:#3fd06b;transition:width .4s}.mi-bar em.mid{background:#f0c23a}.mi-bar em.low{background:#ef5b5b}
+.mini-text{margin-top:auto;position:relative;padding:10px 28px 10px 12px;min-height:60px;font:500 15.5px/1.35 'Pixelify Sans',var(--f-d);cursor:pointer}
+.mini-text p{margin:0}.mini-text .mt-more{position:absolute;right:10px;bottom:6px;color:#e0473c;display:none;animation:mmore .6s steps(2) infinite}.mini-text.wait .mt-more{display:block}
+@keyframes mmore{50%{transform:translateY(3px)}}
+.mini-cmds{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:9px;background:linear-gradient(#2c48c9,#16246e);border:3px solid #e9edff;border-radius:10px;box-shadow:0 3px 0 #05060f}
+.mini-cmds:empty{display:none}
+.mini-cmds .mc{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:8px 10px;border-radius:7px;background:rgba(255,255,255,.08);border:2px solid transparent;color:#fff;font-family:'Pixelify Sans',var(--f-d)}
+.mini-cmds .mc b{font:700 16px/1.05 'Pixelify Sans',var(--f-d)}.mini-cmds .mc small{font-size:11.5px;line-height:1.25;color:#cdd6ff}
+.mini-cmds .mc:hover,.mini-cmds .mc:focus-visible{border-color:#ffd34d;background:rgba(255,255,255,.16);outline:none}
+.mini-cmds .mc.good{border-color:rgba(255,211,77,.65)}.mini-cmds .mc.bad small{color:#ffb3a8}
+.mini-cmds .mc:disabled{opacity:.45}.mini-cmds .mc.ghost{background:transparent;border-color:rgba(255,255,255,.25)}
+.mini-cmds .mc.small{grid-column:1/-1;padding:6px 10px;align-items:center}
+.mini-cmds.table{display:block}
+.mt-table{background:#fbfbf3;color:#1c1d33;border-radius:8px;padding:8px;display:grid;gap:3px}
+.mt-h{font:700 13px/1.2 'Pixelify Sans',var(--f-d);color:#2c48c9;margin:4px 2px}
+.mt-r{display:grid;grid-template-columns:24px minmax(0,1fr) auto 50px 52px;gap:6px;align-items:center;font:500 13px/1.2 'Pixelify Sans',var(--f-d);padding:3px 4px;border-radius:5px}
+.mt-r b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mt-r.me{background:#fff1c9}.mt-r .hn{color:#777b99;font-size:11.5px}
+.mt-r .pl{font-style:normal;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#d9dbe8;font-weight:700}
+.pl.p1{background:#f6c945}.pl.p2{background:#d7dbe4}.pl.p3{background:#d99a62}
+.mt-btns{display:flex;gap:7px;margin-top:8px}.mt-btns .mc{flex:1;align-items:center;text-align:center}
+.mini-fx{position:fixed;inset:0;z-index:45;pointer-events:none;overflow:hidden}
+.mini-fx.flash{animation:mflash .2s steps(1) 3}
+@keyframes mflash{0%{background:#fff}50%{background:transparent}}
+.mini-fx i{position:absolute;left:0;right:0;height:12.6%;background:#05060f;top:calc(var(--i) * 12.5%)}
+.mini-fx i:nth-child(odd){transform:translateX(-101%)}.mini-fx i:nth-child(even){transform:translateX(101%)}
+.mini-fx.bars i{animation:mbar .42s ease-in forwards;animation-delay:calc(var(--i) * 45ms)}
+@keyframes mbar{to{transform:translateX(0)}}
+.mini-fx.open i{transform:translateX(0);animation:mopen .45s ease-out forwards}
+@keyframes mopen{to{transform:scaleY(0)}}
+.mini-fx.fade{background:#05060f;animation:mfade .4s ease-in}
+@keyframes mfade{from{opacity:0}}
+@media (min-aspect-ratio:13/10){
+  .mini{flex-direction:row}
+  .mini-stage{flex:1 1 auto;width:auto;height:100%}
+  .mini-ui{flex:0 0 min(360px,44vw);padding:calc(env(safe-area-inset-top,0px) + 8px) calc(env(safe-area-inset-right,0px) + 10px) calc(env(safe-area-inset-bottom,0px) + 8px) 10px;gap:6px}
+  .mini-text{min-height:0;font-size:14.5px}.mini-go{min-height:84px}
+}
+@media (min-width:900px) and (max-aspect-ratio:13/10){.mini-ui{width:100%;max-width:720px;margin:0 auto}}
+@media (max-aspect-ratio:13/10){.mini.tbl .mini-stage{height:min(30vh,64vw)}}
+.mini-ui>*{flex-shrink:0}
+@media (min-aspect-ratio:13/10){.mini.tbl .mini-info{display:none}}
+@media (prefers-reduced-motion:reduce){.mini-go{animation:none}.mini-fx.flash{animation:none}}
 /* Shared ship */
 body:not(.shared) #btnSay,body:not(.shared) .money .online{display:none}
 body.shared #speeds,body.shared .ffwd{display:none!important}
@@ -1068,6 +1128,7 @@ const ACTIONS=[
  {id:'basket',n:'Spela basket',at:['idrott'],dur:45,pose:'work',spot:'center',fx:{energi:-12,hygien:-14,kul:16},xp:{fitness:11},tag:'kul',workout:true},
  {id:'klattra',n:'Klättra på höghöjdsbanan',mode:'course',at:['hojd'],dur:45,pose:'work',spot:'center',fx:{kul:26,energi:-10},xp:{fitness:10},adv:true,tag:'kul'},
  {id:'rida',n:'Rida en häst',mode:'ride',at:['ridhus','ridbana','skog1','skog2'],dur:60,pose:'ride',spot:'center',fx:{kul:26,energi:-8},xp:{djur:12,fitness:5},adv:true,tag:'kul',animal:true},
+ {id:'hopptrana',n:'Träna hoppning',at:['ridhus'],when:[8,20],dur:45,pose:'ride',spot:'center',fx:{kul:15,energi:-8},xp:{djur:6},tag:'kul',animal:true,req:()=>!ST.owned.sadel?'Kräver sadel från Hööks':null,contest:'train'},
  {id:'tavling',n:'Tävla i hoppning',at:['ridhus'],when:[10,18],dur:90,cost:50,pose:'ride',spot:'center',fx:{kul:30,energi:-12},xp:{djur:10},adv:true,tag:'kul',animal:true,req:()=>!ST.owned.sadel?'Kräver sadel från Hööks':lvl('djur')<4?'Kräver Djur nivå 4':null,contest:true},
  {id:'mocka',n:'Mocka och borsta hästarna',at:['stall'],dur:45,pose:'work',spot:'center',fx:{hygien:-15,kul:8},xp:{djur:10},tag:'kul',animal:true},
  {id:'grisar',n:'Klappa grisarna',at:['stall'],dur:10,pose:'stand',spot:'center',fx:{kul:9},xp:{djur:3},tag:'kul',animal:true},
@@ -1752,7 +1813,7 @@ function beginAction(){const pn=ME.pending;if(!pn)return;ME.pending=null;const{a
   if(a.work)ST.job.earned=0;
   if(a.sleep&&a.id==='sova')toast(SHARED?'Sov gott! Du kan stänga spelet – din figur sover vidare och vaknar på morgonen.':'Sov gott! Tiden går fort medan du sover.','info');
   emit('begin',{a,zid});}
-function tickAction(dm){const A=ME.action;const a=A.a;
+function tickAction(dm){const A=ME.action;const a=A.a;if(A.hold)return;   /* a minigame is being played */
   if(A.dur===Infinity){if(coaster.laps>A.lap0)finishAction(true);return;}
   const step=Math.min(dm,A.dur-A.t);if(step<=0){finishAction(true);return;}A.t+=step;const f=step/A.dur;
   const slm=a.sleep?econSleepMul(A):1;
@@ -1774,7 +1835,7 @@ function finishAction(done){const A=ME.action;if(!A)return;ME.action=null;const 
     if(a.id==='lagamat'&&lvl('matlagning')>=4){addNeed('mat',15);toast('Mums! Du lagade något riktigt gott.');}
     if(a.party)partyDone();
     if(a.course)ST.stats.courses++;
-    if(a.contest)contestDone();
+    if(a.contest&&!A.mini)contestDone();
     if(a.own)ST.owned[a.own]=true;
     if(a.buff)ST.buffs[a.buff]=ST.t+1440;
     if(a.inv)ST.inv[a.inv]=(ST.inv[a.inv]||0)+1;
@@ -2839,7 +2900,9 @@ const hasHome=id=>!!(ST&&ST.econ&&ST.econ.home[id]);
 function trophyList(){if(!ST)return[];const T=[],P=ST.econ.proj;
   if(ST.job&&ST.job.lvl>0)T.push({k:'cup',c:GOLD,n:CAREERS[ST.job.id].titles[ST.job.lvl]});
   for(const i of ST.best.slice(0,4))T.push({k:'heart',c:0xe2655a,n:'Bästa vän: '+((NPCS[i]||{}).name||'')});
-  if(ST.stats.contests>0)T.push({k:'medal',c:0xc9874a,n:'Hopptävling'});
+  {const R=(ST.hopp&&ST.hopp.ros)||[];const best={};for(const r of R)if(!best[r.c]||r.p<best[r.c].p)best[r.c]=r;const ks=Object.keys(best);
+    if(ks.length)for(const k of ks.sort().reverse()){const r=best[k];T.push({k:r.p===1?'cup':'medal',c:[0,GOLD,0xc0c4cc,0xc9874a][r.p],n:r.p+':a i hoppning, klass '+k});}
+    else if(ST.stats.contests>0)T.push({k:'medal',c:0xc9874a,n:'Hopptävling'});}
   if(ST.goalDone){const g=GOALS.find(x=>x.id===ST.goal);T.push({k:'star',c:GOLD,n:'Livsmål'+(g?': '+g.n:'')});}
   for(const p of PROJ)if(P.open[p.id]&&((P.mine[p.id]||0)>0||(P.mineW[p.id]||0)>0||P.cut[p.id]))T.push({k:'plaque',c:0x8a6242,n:'Byggde '+p.def});
   if((ST.stats.reqs||0)>=10)T.push({k:'medal',c:STEEL,n:'Tio uppdrag'});
@@ -3437,7 +3500,7 @@ function catchupToast(r){if(!r)return;const p=[];if(r.nights)p.push('sov '+(r.ni
   setTimeout(()=>toast('Medan du var borta levde '+ST.name+' på som vanligt'+(p.length?': '+p.join(', '):'')+'.','big'),1400);}
 
 /* ---------- saving, profile ---------- */
-function hsPub(){return{name:ST.name,look:ST.look,home:ST.home,job:ST.job?{id:ST.job.id,lvl:ST.job.lvl,at:ST.jobAt||null}:null,title:ST.job?CAREERS[ST.job.id].titles[ST.job.lvl]:'',homeUp:HOME_UP.filter(u=>hasHome(u.id)).map(u=>u.id),tro:trophyList().slice(0,10).map(t=>({k:t.k,c:t.c})),v:1};}
+function hsPub(){return{name:ST.name,look:ST.look,home:ST.home,job:ST.job?{id:ST.job.id,lvl:ST.job.lvl,at:ST.jobAt||null}:null,title:ST.job?CAREERS[ST.job.id].titles[ST.job.lvl]:'',homeUp:HOME_UP.filter(u=>hasHome(u.id)).map(u=>u.id),tro:trophyList().slice(0,10).map(t=>({k:t.k,c:t.c})),hopp:ST.hopp?{b:ST.hopp.best,w:ST.hopp.wins||0}:null,v:1};}
 async function hsSave(){if(!SHARED||!ST||!HSN.me)return;if(HSN.saveBusy){HSN.saveAgain=true;return;}HSN.saveBusy=true;
   try{ST.pos=[ME.x,ME.z];ST.saved=Date.now();const data=JSON.parse(JSON.stringify(ST));await NETB.save(HSN.me,data,hsPub());lastSave=performance.now();dirty=false;}
   catch(e){hsNetErr(e);}finally{HSN.saveBusy=false;if(HSN.saveAgain){HSN.saveAgain=false;setTimeout(hsSave,1500);}}}
@@ -3851,6 +3914,271 @@ async function hsStartCard(host){const card=el('div',{class:'slot shared'});host
   btns.appendChild(el('button',{type:'button',class:'btn ghost',onclick:()=>{const body=el('div');const inp=el('input',{type:'text',placeholder:'HS-…',class:'codebox'});body.appendChild(el('p',{class:'small'},'Klistra in flyttkoden från din andra enhet.'));body.appendChild(inp);
     showDialog('Flytta hit en figur',body,[['Flytta hit',()=>{const v=HSID.parse(inp.value);if(!v){$('#hsStat').textContent='Flyttkoden stämmer inte. Kontrollera att du fick med hela koden.';return;}HSID.set(v);showStart();}],['Avbryt',null,'ghost']]);}},'Har du en flyttkod?'));}
 
+/* ================= MINI: hopptävling – a game inside the game =================
+   A Pokémon-style flash and wipe takes you from the riding hall into a pixel-art arena on the ship. Before each fence
+   you pick a command – Samla, Framåt, Lugna or Klappa – and the fence type decides which one suits it (like types in a
+   battle). Then you press HOPPA at the right moment, an action command like the timed hits in Paper Mario.
+   Faults follow show-jumping rules: a knock-down 4, a refusal 4, a second refusal eliminates, and every started second
+   over the time allowed costs 1. The horse's stamina and trust come from the life sim (energy, bond, hästgodis), and the
+   result goes back into it: prize money, a rosette on the trophy shelf, bond, a higher class, and on the shared ship
+   a best round that everyone aboard can see. */
+const JCLASS=[
+ {id:1,n:'Klass 1',h:'40 cm',hp:10,fences:['kryss','vertikal','kryss','oxer','vertikal','kryss'],allowed:36,prize:[150,80,40],npc:[0.35,0.65]},
+ {id:2,n:'Klass 2',h:'70 cm',hp:15,fences:['vertikal','oxer','kryss','vatten','vertikal','kombi','oxer','vertikal'],allowed:44,prize:[300,150,75],npc:[0.4,0.7]},
+ {id:3,n:'Klass 3',h:'100 cm',hp:20,fences:['oxer','vertikal','kombi','vatten','mur','oxer','vertikal','kombi','oxer','mur'],allowed:54,prize:[600,300,150],npc:[0.45,0.75]}];
+const JFENCE={
+ kryss:{n:'Kryss',d:'Ett lätt hinder med korsade bommar.',best:null,worst:null,zone:0.3,tire:3},
+ vertikal:{n:'Vertikal',d:'Högt och smalt. Samla hästen för ett exakt avsprång.',best:'samla',worst:'fram',zone:0.22,tire:4},
+ oxer:{n:'Oxer',d:'Ett brett hinder. Hästen behöver fart – välj Framåt.',best:'fram',worst:'samla',zone:0.2,tire:6},
+ vatten:{n:'Vattengrav',d:'Många hästar är rädda för vatten. Fart och förtroende hjälper.',best:'fram',worst:null,zone:0.22,tire:5,scary:0.2},
+ mur:{n:'Mur',d:'Muren ser tung ut. En samlad och trygg häst hoppar bäst.',best:'samla',worst:'fram',zone:0.2,tire:6,scary:0.12},
+ kombi:{n:'Kombination',d:'Två hinder direkt efter varandra – tryck HOPPA två gånger!',best:'samla',worst:null,zone:0.22,tire:7,double:true}};
+const JCMD=[
+ {id:'samla',n:'Samla',d:'Kortare galopp. Lättare att pricka avsprånget.',t:1.0,win:1.35,spd:0.8,sta:2,tru:2},
+ {id:'fram',n:'Framåt',d:'Mer fart. Bra för breda hinder, svårare att pricka.',t:-0.8,win:0.8,spd:1.35,sta:-12,tru:0},
+ {id:'lugna',n:'Lugna',d:'Andas lugnt så blir hästen trygg. Tar lite tid.',t:0.8,win:1.1,spd:0.95,sta:3,tru:14},
+ {id:'klappa',n:'Klappa',d:'Klappa och säg något snällt. Ger förtroende.',t:0.8,win:1.0,spd:1.0,sta:2,tru:8}];
+let JVW=256,JVH=144,JOY=0;const JH=144,JGY=118; /* canvas size follows the stage (pixels stay square); JOY = ceiling above the 144-high world */
+const JM={on:false,mode:'contest',phase:'off',cls:null,course:[],fi:0,el:0,horse:null,hn:'Häst',coat:0x8a5a35,sta:80,tru:50,
+  time:0,shown:0,faults:0,knocks:0,refusals:0,refHere:0,elim:false,cmd:null,log:[],x:0,cam:0,vx:0,t:0,anim:0,air:null,
+  meter:null,parts:[],rails:[],crowd:[],cheer:0,text:'',textT:0,textFull:'',textCb:null,raf:0,last:0,wasPaused:false,wasNoRender:false,
+  res:null,dom:null,cv:null,cx:null,bg:null,tapLock:0};
+const jr=(a,b)=>a+Math.random()*(b-a);
+const jhex=(c,k)=>{const r=Math.min(255,Math.round(((c>>16)&255)*k)),g=Math.min(255,Math.round(((c>>8)&255)*k)),b=Math.min(255,Math.round((c&255)*k));return'rgb('+r+','+g+','+b+')';};
+function jHorse(){/* the horse you ride, else the one that trusts you most */
+  if(ME.mount&&ME.mount.type==='horse')return ME.mount;let best=null,bb=-1;for(const c of HORSES){const b=hs(c).b;if(b>bb){bb=b;best=c;}}return best;}
+function jState(){return ST.hopp||(ST.hopp={lvl:1,best:{},wins:0,starts:0,ros:[]});}
+
+/* ---------- open and close (the encounter transition) ---------- */
+function jumpMini(mode){if(JM.on||!ST)return;JM.on=true;JM.mode=mode==='train'?'train':'contest';buildMiniDom();
+  const c=jHorse();JM.horse=c;JM.course=[];JM.cls=null;JM.meter=null;JM.air=null;JM.parts=[];JM.rails=[];JM.x=40;JM.cam=0;JM.phase='intro0';JM.hn=c?c.name:'Hästen';JM.coat=c?(c.coat||0x8a5a35):0x8a5a35;
+  JM.wasPaused=paused;if(!SHARED)paused=true;else hsLoadPlayers();JM.wasNoRender=!!window.__noRender;window.__miniOn=true;closePanels();
+  const fx=JM.dom.fx;fx.hidden=false;fx.className='mini-fx flash';
+  setTimeout(()=>{fx.className='mini-fx bars';},620);
+  setTimeout(()=>{window.__noRender=true;JM.dom.root.hidden=false;JM.phase='class';jResize();jBg();JM.last=performance.now();JM.raf=requestAnimationFrame(jFrame);renderClassPick();},1250);
+  setTimeout(()=>{fx.className='mini-fx open';},1350);setTimeout(()=>{fx.hidden=true;fx.className='mini-fx';},1900);}
+function jForceClose(){/* leaving to the start screen mid-ride: just take the arena down */if(!JM.on)return;cancelAnimationFrame(JM.raf);JM.on=false;JM.phase='off';window.__miniOn=false;window.__noRender=JM.wasNoRender;
+  if(JM.dom){JM.dom.root.hidden=true;JM.dom.fx.hidden=true;JM.dom.fx.className='mini-fx';}}
+function closeMini(){if(!JM.on)return;const fx=JM.dom.fx;fx.hidden=false;fx.className='mini-fx fade';
+  setTimeout(()=>{JM.dom.root.hidden=true;cancelAnimationFrame(JM.raf);JM.on=false;JM.phase='off';JM.dom.root.classList.remove('tbl');window.__miniOn=false;window.__noRender=JM.wasNoRender;if(!SHARED)paused=JM.wasPaused;
+    const A=ME.action;if(A&&A.a.contest){A.mini=true;A.hold=false;try{tickAction(Math.max(0,A.dur-A.t));}catch(e){finishAction(true);}}requestSave(true);},420);
+  setTimeout(()=>{fx.className='mini-fx';fx.hidden=true;},900);}
+
+/* ---------- DOM: the arena canvas, Pokémon-style status and text boxes, a Final Fantasy-style command window ---------- */
+function buildMiniDom(){if(JM.dom)return;const root=el('div',{class:'mini',id:'mini',hidden:true,role:'dialog','aria-label':'Hopptävling'});
+  const stage=el('div',{class:'mini-stage'});const cv=el('canvas',{width:'256',height:'144','aria-hidden':'true'});stage.appendChild(cv);
+  const hud=el('div',{class:'mini-hud'},el('span',{class:'mh-cls'}),el('span',{class:'mh-time'}),el('span',{class:'mh-f'}));stage.appendChild(hud);
+  const dots=el('div',{class:'mini-dots'});stage.appendChild(dots);
+  const go=el('button',{type:'button',class:'mini-go',hidden:true},'HOPPA!');
+  const ui=el('div',{class:'mini-ui'});
+  const info=el('div',{class:'mini-box mini-info'},el('div',{class:'mi-top'},el('b',{class:'mi-name'}),el('span',{class:'mi-lv'})),
+    el('div',{class:'mi-bar'},el('span',null,'ORK'),el('i',null,el('em',{class:'mi-sta'}))),el('div',{class:'mi-bar'},el('span',null,'TRYGG'),el('i',null,el('em',{class:'mi-tru'}))));
+  const text=el('div',{class:'mini-box mini-text','aria-live':'polite'},el('p',{class:'mt-p'}),el('span',{class:'mt-more'},'▼'));
+  const cmds=el('div',{class:'mini-cmds'});
+  ui.appendChild(info);ui.appendChild(text);ui.appendChild(cmds);ui.appendChild(go);root.appendChild(stage);root.appendChild(ui);
+  const fx=el('div',{class:'mini-fx',hidden:true},...Array.from({length:8},(_,i)=>el('i',{style:'--i:'+i})));
+  document.body.appendChild(root);document.body.appendChild(fx);
+  JM.dom={root,stage,cv,hud,dots,go,ui,info,text,cmds,fx};JM.cv=cv;JM.cx=cv.getContext('2d');JM.cx.imageSmoothingEnabled=false;
+  const tap=e=>{e.preventDefault();jTap();};go.addEventListener('pointerdown',tap);stage.addEventListener('pointerdown',e=>{if(JM.phase==='approach'||JM.phase==='approach2')tap(e);});
+  text.addEventListener('click',()=>jAdvance());
+  addEventListener('keydown',e=>{if(!JM.on)return;if(e.code==='Space'||e.code==='Enter'){e.preventDefault();if(JM.phase==='approach'||JM.phase==='approach2')jTap();else jAdvance();}
+    if(JM.phase==='choose'){const i=['Digit1','Digit2','Digit3','Digit4'].indexOf(e.code);if(i>=0)jChoose(JCMD[i].id);}
+    if(e.code==='Escape'&&JM.phase!=='table')jQuit();e.stopPropagation();},true);
+  addEventListener('resize',()=>{if(JM.on)jResize();});addEventListener('orientationchange',()=>setTimeout(()=>{if(JM.on)jResize();},250));}
+function jResize(){/* at least 184×144 world pixels, as big as the stage allows; extra height becomes ceiling (max 36) and sand */
+  const r=JM.dom.stage.getBoundingClientRect();if(!r.width||!r.height)return;const k=Math.max(1,Math.min(r.width/184,r.height/144));
+  JVW=Math.max(184,Math.round(r.width/k));JVH=Math.max(144,Math.round(r.height/k));JOY=Math.min(36,JVH-144);if(JM.cv.width!==JVW)JM.cv.width=JVW;if(JM.cv.height!==JVH)JM.cv.height=JVH;}
+
+/* ---------- the text box: letter by letter, tap to go on ---------- */
+function jSay(t,cb){JM.textFull=t;JM.text='';JM.textT=0;JM.textCb=cb||null;const d=JM.dom.text;d.querySelector('.mt-p').textContent='';d.classList.toggle('wait',!!cb);}
+function jAdvance(){if(JM.text.length<JM.textFull.length){JM.text=JM.textFull;JM.dom.text.querySelector('.mt-p').textContent=JM.text;return;}const cb=JM.textCb;if(cb){JM.textCb=null;JM.dom.text.classList.remove('wait');cb();}}
+function jTextTick(dt){if(JM.text.length>=JM.textFull.length)return;JM.textT+=dt;const n=Math.min(JM.textFull.length,Math.floor(JM.textT/0.022));if(n!==JM.text.length){JM.text=JM.textFull.slice(0,n);JM.dom.text.querySelector('.mt-p').textContent=JM.text;}}
+function jCmds(list){const C=JM.dom.cmds;C.innerHTML='';C.className='mini-cmds'+(list.length>4?' many':'');for(const b of list)C.appendChild(b);}
+const jBtn=(label,sub,fn,o)=>{o=o||{};const b=el('button',{type:'button',class:'mc'+(o.cls?' '+o.cls:''),disabled:!!o.dis},el('b',null,label),sub?el('small',null,sub):null);b.addEventListener('click',()=>{if(!b.disabled)fn();});return b;};
+
+/* ---------- 1. choose a class ---------- */
+function renderClassPick(){const H=jState();JM.dom.root.classList.remove('tbl');jResize();JM.cls=null;JM.course=[];JM.meter=null;JM.air=null;JM.rails=[];JM.x=40;JM.cam=0;JM.dom.go.hidden=true;jHud();jInfo();
+  jSay(JM.mode==='train'?'Träning på ridbanan! Vilken klass vill du öva på?':'Välkommen till hopptävlingen! Startavgiften är betald. Vilken klass rider du?');
+  jCmds(JCLASS.map(c=>{const locked=JM.mode!=='train'&&c.id>H.lvl;const best=H.best[c.id];
+      return jBtn(c.n+' · '+c.h,locked?'Låst – placera dig i klassen under':best?'Bäst: '+best.f+' fel, '+best.t.toFixed(1)+' s':c.fences.length+' hinder',()=>jStart(c),{dis:locked});})
+    .concat([jBtn('Avbryt',JM.mode==='train'?'Tillbaka till ridhuset':'Startavgiften betalas inte tillbaka',()=>jQuit(true),{cls:'ghost'})]));}
+function jStart(c){const H=jState();JM.cls=c;JM.course=c.fences.map((k,i)=>({k,i,x:96+i*64,knocked:0,col:['#e0473c','#2f6fd6','#f0b52a','#3aa65a'][i%4]}));
+  JM.fi=0;JM.el=0;JM.time=0;JM.shown=0;JM.faults=0;JM.knocks=0;JM.refusals=0;JM.refHere=0;JM.elim=false;JM.log=[];JM.x=36;JM.cam=0;JM.vx=0;JM.air=null;JM.meter=null;JM.parts=[];JM.rails=[];
+  const he=JM.horse?hs(JM.horse):{e:80,b:20};JM.sta=clamp(40+he.e*0.6,30,100);JM.tru=clamp(30+he.b*0.6,25,95);let treat='';
+  if((ST.inv.hastgodis||0)>0){ST.inv.hastgodis--;JM.tru=clamp(JM.tru+15,0,100);treat=' '+JM.hn+' fick hästgodis innan start och känner sig trygg.';}
+  if(JM.mode==='contest')H.starts=(H.starts||0)+1;JM.field=jField(c);jHud();jInfo();jDots();JM.phase='intro';
+  jSay(c.n+' · '+c.h+'. '+c.fences.length+' hinder och '+c.allowed+' sekunder maxtid.'+treat+' Domaren ringer i klockan – lycka till!',()=>jNext());jCmds([]);}
+
+/* ---------- 2. before each fence: pick a command ---------- */
+function jNext(){const f=JM.course[JM.fi];if(!f){jFinish();return;}JM.phase='choose';JM.el=0;const F=JFENCE[f.k];
+  const mood=JM.tru<35?' '+JM.hn+' verkar nervös.':JM.sta<25?' '+JM.hn+' börjar bli trött.':'';
+  jSay('Hinder '+(JM.fi+1)+' av '+JM.course.length+': '+F.n+'. '+F.d+mood);jHud();jInfo();jDots();
+  jCmds(JCMD.map(c=>{const tag=F.best===c.id?'★ passar':F.worst===c.id?'✗ svårt':'';return jBtn(c.n,tag?tag+' · '+c.d:c.d,()=>jChoose(c.id),{cls:F.best===c.id?'good':F.worst===c.id?'bad':''});})
+    .concat([jBtn('Bryt',"Avsluta ritten",()=>jQuit(),{cls:'ghost small'})]));}
+function jChoose(id){if(JM.phase!=='choose')return;const C=JCMD.find(c=>c.id===id);JM.cmd=C;const f=JM.course[JM.fi];
+  const k=C.id==='klappa'&&JM.log.filter(l=>l.cmd==='klappa').length>=2?0.5:1;
+  JM.sta=clamp(JM.sta+C.sta,0,100);JM.tru=clamp(JM.tru+C.tru*k,0,100);JM.time+=4+C.t;jInfo();jCmds([]);
+  jSay(C.id==='samla'?'Du samlar '+JM.hn+' i en kort, studsig galopp…':C.id==='fram'?'Framåt! '+JM.hn+' ökar farten…':C.id==='lugna'?'Du andas lugnt och sänker axlarna. '+JM.hn+' slappnar av…':'Du klappar '+JM.hn+' på halsen: "Bra jobbat!"');
+  jApproach(f,C);}
+/* the action command: a marker runs along the bar, press HOPPA inside the green take-off zone */
+function jApproach(f,C,second){const F=JFENCE[f.k];const skill=1+Math.min(10,lvl('djur'))*0.03;const tru=0.75+JM.tru/200;const st=JM.sta<25?0.85:1;
+  let w=F.zone*C.win*tru*skill*st;if(second)w*=0.9;w=clamp(w,0.08,0.42);const dur=(second?0.95:1.7)/C.spd;
+  const fx=f.x+(JM.el?26:0);JM.meter={p:0,p0:0.78,w,dur,hit:null,second:!!second,f,x0:JM.x,x1:fx-10};JM.phase=second?'approach2':'approach';JM.dom.go.hidden=false;JM.dom.go.textContent=second?'HOPPA IGEN!':'HOPPA!';JM.tapLock=performance.now()+120;}
+function jTap(){const M=JM.meter;if(!M||M.hit||performance.now()<JM.tapLock)return;const d=M.p-M.p0,a=Math.abs(d);
+  M.hit=a<M.w*0.16?'perfect':a<M.w/2?'good':a<M.w/2+0.09?(d<0?'early':'late'):(d<0?'wayearly':'late');JM.dom.go.hidden=true;}
+function jResolve(){const M=JM.meter,f=M.f,F=JFENCE[f.k],C=JM.cmd;const q=M.hit||'miss';JM.dom.go.hidden=true;
+  const qm={perfect:0.2,good:0.6,early:1,late:1,wayearly:1.2,miss:1}[q];
+  let refuse=(q==='miss'?0.75:0.02)+Math.max(0,(40-JM.tru)/100)+(F.scary&&C.id!=='fram'?F.scary:0)+(F.scary&&JM.tru<50?F.scary*0.6:0)+(JM.sta<25?0.08:0);refuse*=qm;if(M.second)refuse*=0.5;
+  let knock={perfect:0.02,good:0.08,early:0.35,late:0.35,wayearly:0.6,miss:0.5}[q];const qk=q==='perfect'?0.4:1;
+  if(F.best==='fram'&&C.id!=='fram')knock+=0.25*qk;if(F.worst==='fram'&&C.id==='fram')knock+=0.22*qk;if(F.best==='samla'&&C.id==='samla')knock*=0.75;if(JM.sta<25)knock+=0.12;
+  const outcome=Math.random()<refuse?'refuse':Math.random()<knock?'knock':'clear';
+  JM.log.push({fence:f.k,cmd:C.id,q,outcome});return{q,outcome};}
+function jAfter(r){const f=JM.course[JM.fi],F=JFENCE[f.k];const qt={perfect:'Perfekt avsprång!',good:'Bra avsprång.',early:'Lite för tidigt…',late:'Lite för sent…',wayearly:'Alldeles för tidigt!',miss:'Du hann inte trycka!'}[r.q];
+  if(r.outcome==='refuse'){JM.refusals++;JM.refHere++;JM.faults+=4;JM.time+=6;JM.tru=clamp(JM.tru-12,0,100);jInfo();jHud();
+    if(JM.refusals>=2){JM.elim=true;jSay(qt+' '+JM.hn+' vägrade igen. Två vägringar betyder att ni är uteslutna. Det händer de bästa – nästa gång!',()=>jFinish());return;}
+    jSay(qt+' '+JM.hn+' tvärstannade framför hindret! Vägran ger 4 fel. Ni vänder och försöker igen.',()=>{JM.x=f.x-70;JM.cam=Math.max(0,JM.x-60);jNext();});return;}
+  JM.sta=clamp(JM.sta-F.tire,0,100);JM.time+={perfect:-0.6,good:-0.2,early:0.4,late:0.4,wayearly:0.8,miss:0.8}[r.q]||0;
+  if(r.q==='perfect')JM.tru=clamp(JM.tru+4,0,100);else if(r.q==='good')JM.tru=clamp(JM.tru+1,0,100);
+  if(r.outcome==='knock'){JM.knocks++;JM.faults+=4;JM.tru=clamp(JM.tru-4,0,100);f.knocked=1;JM.rails.push({x:f.x+(JM.el?26:0),y:JGY-JM.cls.hp,vy:-30,r:0,vr:jr(-6,6),col:f.col,t:0});}
+  jInfo();jHud();jDots();
+  if(F.double&&JM.el===0&&!JM.elim){JM.el=1;jSay(qt+(r.outcome==='knock'?' Rivning! +4 fel.':'')+' Direkt ett hinder till!');setTimeout(()=>{if(JM.on)jApproach(f,JM.cmd,true);},150);return;}
+  JM.cheer=r.outcome==='clear'?1.2:0.3;JM.fi++;JM.refHere=0;JM.el=0;
+  jSay(qt+(r.outcome==='knock'?' En bom ramlade – rivning, 4 fel.':r.q==='perfect'?' Publiken jublar!':' Rent hopp!'),()=>jNext());}
+
+/* ---------- 3. finish, results and rewards ---------- */
+function jField(c){/* four riders from the ship; the same field for everyone aboard on the same day */
+  const day=Math.floor(ST.t/1440);const me=String(ST.name||'').toLowerCase();const pool=[...new Set(NPCS.filter(n=>n.name&&n.name.toLowerCase()!==me).map(n=>n.name))];const used=new Set([JM.hn]);const out=[];
+  const seed=SHARED?HS_SEED:(ST.npcSeed||1234);const rnd=i=>(hsHash(seed,day,c.id,i)%10000)/10000;
+  for(let i=0;i<4&&pool.length;i++){const rider=pool.splice(Math.floor(rnd(i*3)*pool.length)%pool.length,1)[0];const hn=HORSE_NAMES.filter(h=>!used.has(h))[Math.floor(rnd(i*3+1)*7)%7]||'Blixten';used.add(hn);
+    const s=c.npc[0]+(c.npc[1]-c.npc[0])*rnd(i*3+2);const u=rnd(i*7+11);const f=u<s?0:u<s+(1-s)*0.65?4:u<0.97?8:-1;
+    const t=Math.round(Math.min(c.allowed-0.4,c.allowed*(0.77+(1-s)*0.12+rnd(i*5+3)*0.16))*10)/10;out.push({n:rider,h:hn,f,t,elim:f<0});}
+  return out;}
+function jFinish(){JM.phase='finish';JM.dom.go.hidden=true;JM.meter=null;jDots();const c=JM.cls;const tf=JM.elim?0:Math.max(0,Math.ceil(JM.time+4-c.allowed));const T=Math.round((JM.time+4)*10)/10;
+  const total=JM.faults+tf;JM.res={T,tf,total,elim:JM.elim};
+  const rows=JM.mode==='train'?[]:JM.field.map(x=>({n:x.n,h:x.h,f:x.elim?null:x.f,t:x.t,elim:x.elim,me:false}));rows.push({n:ST.name,h:JM.hn,f:JM.elim?null:total,t:T,elim:JM.elim,me:true});
+  rows.sort((a,b)=>(a.elim-b.elim)||((a.f||0)-(b.f||0))||(a.t-b.t));const place=JM.elim?0:rows.findIndex(r=>r.me)+1;JM.res.place=place;JM.res.rows=rows;
+  const msg=JM.elim?'Ni blev uteslutna den här gången.':'Målgång! Tid '+T.toFixed(1)+' s'+(tf?', '+tf+' tidsfel':'')+'. Totalt '+total+' fel'+(total===0?' – en felfri runda!':'.');
+  JM.cheer=total===0&&!JM.elim?2.5:0.6;if(total===0&&!JM.elim)for(let i=0;i<60;i++)JM.parts.push({x:JM.x-JM.cam+jr(-40,40),y:jr(10,40),vx:jr(-20,20),vy:jr(-10,30),c:['#ffd34d','#ff6b6b','#5bd1ff','#8affa0','#ffffff'][i%5],t:jr(1.5,3),conf:1});
+  jSay(msg,()=>jTable());jCmds([]);}
+function jTable(){JM.phase='table';JM.dom.root.classList.add('tbl');jResize();const R=JM.res,c=JM.cls,H=jState();const rows=R.rows;let reward='';
+  if(JM.mode==='contest'){ST.stats.contests++;const P=R.place;const prize=P>=1&&P<=3?c.prize[P-1]:0;
+    if(prize){earn(prize);reward='+'+prize+' kr';}
+    if(P>=1&&P<=3){H.ros=(H.ros||[]).concat([{c:c.id,p:P,t:ST.t}]).slice(-24);}
+    if(P===1){H.wins=(H.wins||0)+1;giveFx('stolt',360);}
+    if(!R.elim&&(P<=2||R.total===0)&&c.id<3&&H.lvl<=c.id){H.lvl=c.id+1;reward+=(reward?' · ':'')+'Klass '+(c.id+1)+' är upplåst!';}
+    const b=H.best[c.id];if(!R.elim&&(!b||R.total<b.f||(R.total===b.f&&R.T<b.t)))H.best[c.id]={f:R.total,t:R.T};}
+  if(JM.horse){bond(JM.horse,R.elim?1:R.total===0?6:3,true);const h=hs(JM.horse);h.e=clamp(h.e-15,0,100);}
+  addXP('djur',R.elim?2:4);
+  const box=el('div',{class:'mt-table'});
+  box.appendChild(el('div',{class:'mt-h'},JM.mode==='train'?'Träningsrunda · '+c.n:'Resultat · '+c.n+' · '+c.h));
+  rows.forEach((r,i)=>box.appendChild(el('div',{class:'mt-r'+(r.me?' me':'')},el('i',{class:'pl p'+(r.elim?0:i+1)},r.elim?'–':String(i+1)),el('b',null,r.n),el('span',{class:'hn'},r.h),el('span',null,r.elim?'utesl.':r.f+' fel'),el('span',null,r.elim?'':r.t.toFixed(1)+' s'))));
+  if(SHARED){const L=jBoard(c.id);if(L.length){box.appendChild(el('div',{class:'mt-h'},'Bäst på skeppet · '+c.n));const top=L.slice(0,3);const mi=L.findIndex(r=>r.me);if(mi>=3)top.push(L[mi]);top.forEach((r,j)=>{const i=j<3?j:mi;box.appendChild(el('div',{class:'mt-r'+(r.me?' me':'')},el('i',{class:'pl p'+(i+1)},String(i+1)),el('b',null,r.n),el('span',{class:'hn'},''),el('span',null,r.f+' fel'),el('span',null,r.t.toFixed(1)+' s')));});}}
+  const P=R.place;const head=JM.mode==='train'?(R.elim?'Det blev uteslutning, men det är därför man tränar!':'Bra träning! '+(R.total===0?'Felfritt!':R.total+' fel.')):R.elim?'Ingen placering den här gången.':P===1?'Du vann klassen!':P<=3?'Du kom på '+P+':e plats!':'Du kom '+P+':a. Fortsätt träna!';
+  jSay(head+(reward?' '+reward:''));
+  const T=JM.dom.cmds;T.innerHTML='';T.className='mini-cmds table';T.appendChild(box);
+  T.appendChild(el('div',{class:'mt-btns'},jBtn('Tillbaka till ridhuset','',()=>{closeMini();toast(head+(reward?' '+reward:''),JM.mode!=='train'&&P===1?'big':'info');}),jBtn(JM.mode==='train'?'Rid igen':'Träna igen',JM.mode==='train'?'':'Utan pris',()=>{JM.mode='train';renderClassPick();},{cls:'ghost'})));
+  if(SHARED)requestSave(true);}
+function jBoard(cid){const L=[];const mine=ST.hopp&&ST.hopp.best[cid];if(mine)L.push({n:ST.name,f:mine.f,t:mine.t,me:true});
+  for(const p of HSN.players){if(!p.pub||!p.pub.hopp||p.id===HSN.me.id)continue;const b=p.pub.hopp.b&&p.pub.hopp.b[cid];if(b&&Number.isFinite(+b.f)&&Number.isFinite(+b.t))L.push({n:String(p.name||'?').slice(0,18),f:+b.f,t:+b.t,me:false});}
+  return L.sort((a,b)=>(a.f-b.f)||(a.t-b.t));}
+function jQuit(free){if(JM.phase==='table'){closeMini();return;}
+  if(free||JM.phase==='class'){closeMini();if(JM.mode==='contest')toast('Du anmälde dig men red aldrig. Startavgiften går inte att få tillbaka.','info');return;}
+  JM.elim=true;JM.dom.go.hidden=true;JM.meter=null;jSay('Du bröt ritten. Det räknas som uteslutning.',()=>jFinish());jCmds([]);}
+
+/* ---------- HUD bits ---------- */
+function jHud(){const H=JM.dom.hud;const c=JM.cls;H.querySelector('.mh-cls').textContent=c?c.n+' · '+c.h:'Hopptävling';
+  H.querySelector('.mh-time').textContent=c?'⏱ '+(JM.shown).toFixed(1)+' / '+c.allowed:'';H.querySelector('.mh-f').textContent=c?JM.faults+' fel':'';}
+function jInfo(){const I=JM.dom.info;I.querySelector('.mi-name').textContent=JM.hn;const he=JM.horse?hs(JM.horse):{b:0};const hn=clamp(Math.round(he.b/20),0,5);I.querySelector('.mi-lv').textContent='Band '+'♥'.repeat(hn)+'♡'.repeat(5-hn)+' · Djur nv '+lvl('djur');
+  const bar=(q,v)=>{const e=I.querySelector(q);e.style.width=Math.round(v)+'%';e.className=q.slice(1)+(v<25?' low':v<50?' mid':'');};bar('.mi-sta',JM.sta);bar('.mi-tru',JM.tru);}
+function jDots(){const D=JM.dom.dots;D.innerHTML='';JM.course.forEach((f,i)=>D.appendChild(el('i',{class:(i<JM.fi?(f.knocked?'k':'ok'):i===JM.fi?'now':'')})));}
+
+/* ---------- the loop ---------- */
+function jFrame(now){if(!JM.on)return;JM.raf=requestAnimationFrame(jFrame);const dt=Math.max(0,Math.min(0.05,(now-JM.last)/1000));JM.last=Math.max(JM.last,now);JM.t+=dt;jTextTick(dt);
+  const M=JM.meter;let target=0;
+  if((JM.phase==='approach'||JM.phase==='approach2')&&M){M.p+=dt/M.dur;const f=M.f;const fx=f.x+(JM.el?26:0);
+    JM.x=M.x0+(M.x1-M.x0)*Math.min(1,M.p);target=1;if(M.p>=1){JM.phase='air';JM.air={t:0,dur:0.62,x0:JM.x,x1:fx+22,r:jResolve()};if(JM.air.r.outcome==='refuse'){JM.air.ref=true;JM.air.dur=1.0;}}}
+  else if(JM.phase==='air'&&JM.air){const A=JM.air;A.t+=dt;const k=Math.min(1,A.t/A.dur);
+    if(A.ref){JM.x=A.x0+Math.min(8,k*30)*(1-k*0.3);}else JM.x=A.x0+(A.x1-A.x0)*k;
+    if(k>=1){JM.phase='after';const r=A.r;JM.air=null;jAfter(r);}}
+  else if(JM.phase==='intro'||JM.phase==='choose'){const f=JM.course[JM.fi];if(f){const want=f.x+(JM.el?26:0)-58;JM.x+=(want-JM.x)*Math.min(1,dt*3);}}
+  else if(JM.phase==='finish'||JM.phase==='table'){JM.x+=dt*30*(JM.phase==='finish'?1:0.4);}
+  const gallop=JM.phase==='approach'||JM.phase==='approach2'||(JM.phase==='air'&&JM.air&&!JM.air.ref)||JM.phase==='finish';
+  JM.anim+=dt*(gallop?(JM.cmd?JM.cmd.spd:1)*11:2.2);JM.cam+=(Math.max(0,JM.x-70)-JM.cam)*Math.min(1,dt*5);
+  if(JM.cls){const goal=JM.time+(JM.phase==='finish'||JM.phase==='table'?4:0);JM.shown+=(goal-JM.shown)*Math.min(1,dt*2.5);if(Math.abs(goal-JM.shown)<0.05)JM.shown=goal;jHud();}
+  JM.cheer=Math.max(0,JM.cheer-dt*0.6);
+  if(gallop&&Math.random()<dt*24)JM.parts.push({x:JM.x-JM.cam-10,y:JGY-1,vx:jr(-30,-10),vy:jr(-14,-4),c:'#c79a5b',t:jr(0.3,0.6)});
+  for(const p of JM.parts){p.t-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=(p.conf?20:60)*dt;}JM.parts=JM.parts.filter(p=>p.t>0);
+  for(const r of JM.rails){r.t+=dt;if(r.y<JGY-2){r.vy+=160*dt;r.y+=r.vy*dt;r.r+=r.vr*dt;}else{r.y=JGY-2;r.r*=0.8;}}
+  jDraw(target);}
+
+/* ---------- drawing: pixel art on a 256×144 canvas ---------- */
+function jBg(){if(JM.bg)return;const W=512,c=document.createElement('canvas');c.width=W;c.height=100;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,70);g.addColorStop(0,'#1d2147');g.addColorStop(1,'#353a74');x.fillStyle=g;x.fillRect(0,0,W,80);
+  for(let i=0;i<W;i+=64){x.fillStyle='#0b0e24';x.fillRect(i+8,10,44,26);x.fillStyle='#596097';x.fillRect(i+6,8,48,2);x.fillRect(i+6,36,48,2);x.fillRect(i+6,8,2,30);x.fillRect(i+52,8,2,30);x.fillRect(i+29,8,2,30);
+    for(let s=0;s<7;s++){x.fillStyle=s%3?'#cfd8ff':'#fff3b0';x.fillRect(i+10+((s*37+i*3)%40),12+((s*17+i)%22),1,1);}
+    if(i%128===0){x.fillStyle='#8c7bd0';x.beginPath();x.arc(i+40,20,5,0,7);x.fill();x.fillStyle='#a796e6';x.fillRect(i+37,17,3,2);}}
+  for(let i=0;i<W;i+=16){x.fillStyle=['#ef5b5b','#ffd34d','#5bd1ff','#8affa0'][(i/16)%4];x.beginPath();x.moveTo(i,40);x.lineTo(i+8,40);x.lineTo(i+4,46);x.fill();}
+  x.fillStyle='#ffd34d';x.fillRect(0,40,W,1);
+  x.fillStyle='#2a2d55';x.fillRect(0,48,W,40);x.fillStyle='#22254a';for(let r=0;r<4;r++)x.fillRect(0,52+r*9,W,2);
+  JM.crowd=[];for(let r=0;r<4;r++)for(let i=0;i<W;i+=6+((i*7+r*3)%3)){JM.crowd.push({x:i,y:51+r*9,c:['#ef5b5b','#ffd34d','#5bd1ff','#8affa0','#f3a6ff','#ffffff','#ff9a4d'][(i*13+r*5)%7],s:['#f2c9a0','#c98b5e','#8a5a3c','#f7dcc0'][(i+r)%4],ph:(i*0.37+r)%6});}
+  x.fillStyle='#e9e6f5';x.fillRect(0,86,W,3);x.fillStyle='#b9b3d6';for(let i=0;i<W;i+=12)x.fillRect(i,86,2,10);x.fillStyle='#e9e6f5';x.fillRect(0,92,W,2);
+  JM.bg=c;}
+function jDraw(target){const x=JM.cx,cam=JM.cam;x.imageSmoothingEnabled=false;x.setTransform(1,0,0,1,0,0);if(JOY>0)jCeil(cam);x.setTransform(1,0,0,1,0,JOY);const GH=JVH-JOY;
+  const bx=-((cam*0.4)%512);x.drawImage(JM.bg,Math.floor(bx),0);x.drawImage(JM.bg,Math.floor(bx)+512,0);
+  const cx=-((cam*0.4)%512);for(const p of JM.crowd){const px=Math.floor(p.x+cx+(p.x+cx<-8?512:0));if(px<-6||px>JVW+6)continue;const hop=JM.cheer>0&&Math.sin(JM.t*14+p.ph)>0.3?-Math.min(2,JM.cheer*2):0;
+    x.fillStyle=p.c;x.fillRect(px,p.y+3+hop,4,4);x.fillStyle=p.s;x.fillRect(px+1,p.y+hop,2,3);if(JM.cheer>0.8&&p.ph<1.5){x.fillStyle=p.s;x.fillRect(px+3,p.y-2+hop,1,3);}}
+  const sg=x.createLinearGradient(0,94,0,GH);sg.addColorStop(0,'#e8c98c');sg.addColorStop(1,'#cf9f5c');x.fillStyle=sg;x.fillRect(0,94,JVW,GH-94);
+  x.fillStyle='rgba(150,100,50,.35)';for(let i=0;i<Math.round(JVW/6);i++){const sx=((i*53-cam)%JVW+JVW)%JVW,sy=100+((i*29)%Math.max(40,GH-102));x.fillRect(Math.floor(sx),sy,2,1);}
+  if(JM.cls){const fin=JM.course.length?JM.course[JM.course.length-1].x+90:0;const fxs=Math.floor(fin-cam);if(fxs>-10&&fxs<JVW+10){x.fillStyle='#fff';x.fillRect(fxs,96,2,GH-96);x.fillStyle='#e0473c';x.fillRect(fxs-4,84,10,4);x.fillStyle='#fff';x.fillRect(fxs,84,2,4);}
+    const st=Math.floor(58-cam);if(st>-10&&st<JVW){x.fillStyle='#3aa65a';x.fillRect(st,84,10,4);x.fillStyle='#fff';x.fillRect(st+4,88,2,GH-88);}}
+  if(JM.cls)for(const f of JM.course){const sx=Math.floor(f.x-cam);if(sx<-60||sx>JVW+40)continue;jFence(f,sx,JM.cls.hp);}
+  for(const r of JM.rails){const sx=r.x-cam;x.save();x.translate(Math.floor(sx),Math.floor(r.y));x.rotate(r.r);x.fillStyle=r.col;x.fillRect(-9,-1,18,2);x.fillStyle='#fff';x.fillRect(-3,-1,6,2);x.restore();}
+  jHorseDraw(Math.floor(JM.x-cam));
+  for(const p of JM.parts){x.fillStyle=p.c;x.fillRect(Math.floor(p.x),Math.floor(p.y),p.conf?2:1,p.conf?2:1);}
+  const M=JM.meter;if(M&&(JM.phase==='approach'||JM.phase==='approach2')){const bw=Math.min(170,JVW-40),bx0=Math.floor((JVW-bw)/2),by=JGY+14;
+    x.fillStyle='rgba(10,12,30,.8)';x.fillRect(bx0-3,by-3,bw+6,10);x.fillStyle='#3b3f63';x.fillRect(bx0,by,bw,4);
+    const z0=bx0+Math.floor((M.p0-M.w/2)*bw),zw=Math.max(3,Math.floor(M.w*bw));x.fillStyle='#3fd06b';x.fillRect(z0,by,zw,4);x.fillStyle='#b8ffcc';x.fillRect(bx0+Math.floor(M.p0*bw)-Math.max(1,Math.floor(zw*0.08)),by,Math.max(2,Math.floor(zw*0.16)),4);
+    const mx=bx0+Math.floor(Math.min(1,M.p)*bw);x.fillStyle=M.hit?'#ffd34d':'#ffffff';x.fillRect(mx-1,by-3,3,10);
+    if(M.hit){x.fillStyle='#ffd34d';x.font='8px "Pixelify Sans",monospace';x.textAlign='center';x.fillText({perfect:'PERFEKT!',good:'BRA!',early:'TIDIGT',late:'SENT',wayearly:'FÖR TIDIGT'}[M.hit]||'',JVW/2,by-6);}}
+  x.setTransform(1,0,0,1,0,0);}
+function jCeil(cam){/* the hull above the hall when the view is taller than the world: plating, rivets and hanging lamps */
+  const x=JM.cx;x.fillStyle='#14173a';x.fillRect(0,0,JVW,JOY+1);x.fillStyle='#1c2050';x.fillRect(0,JOY-4,JVW,4);x.fillStyle='#0b0d26';x.fillRect(0,JOY-1,JVW,1);
+  const o=-((cam*0.4)%52);for(let i=-1;i<JVW/52+1;i++){const px=Math.floor(o+i*52);x.fillStyle='#262b62';x.fillRect(px,0,1,JOY-4);x.fillStyle='#3a4080';x.fillRect(px+4,JOY-3,1,1);x.fillRect(px+30,JOY-3,1,1);
+    const lx=px+26,ly=Math.max(6,JOY-12);x.fillStyle='#4b4f7a';x.fillRect(lx,0,1,ly);x.fillStyle='#ffe9a8';x.fillRect(lx-3,ly,7,2);x.fillStyle='#fff7d6';x.fillRect(lx-1,ly+2,3,1);
+    const gl=x.createRadialGradient(lx,ly+3,0,lx,ly+3,14);gl.addColorStop(0,'rgba(255,233,168,.35)');gl.addColorStop(1,'rgba(255,233,168,0)');x.fillStyle=gl;x.fillRect(lx-14,ly-11,28,28);}}
+function jFence(f,sx,hp){const x=JM.cx,K=f.k;const pole=(px,h,c)=>{x.fillStyle='#f4f4f8';x.fillRect(px,JGY-h-4,3,h+4);x.fillStyle=c;for(let y=JGY-h-4;y<JGY;y+=6)x.fillRect(px,y,3,3);x.fillStyle='#9a9ab0';x.fillRect(px+3,JGY-h-4,1,h+4);};
+  const rail=(px,y,w,c,down)=>{if(down)return;x.fillStyle=c;x.fillRect(px,y,w,2);x.fillStyle='#fff';for(let i=2;i<w;i+=6)x.fillRect(px+i,y,3,2);};
+  const shadow=(px,w)=>{x.fillStyle='rgba(90,60,30,.35)';x.fillRect(px-2,JGY,w+4,2);};
+  if(K==='vatten'){shadow(sx-4,26);x.fillStyle='#2b6fd8';x.fillRect(sx-4,JGY-2,26,3);x.fillStyle='#7fc3ff';x.fillRect(sx-2,JGY-2,6,1);x.fillRect(sx+10,JGY-2,5,1);pole(sx-6,6,f.col);rail(sx-5,JGY-6,4,f.col,f.knocked);return;}
+  if(K==='mur'){shadow(sx,14);for(let r=0;r<Math.ceil(hp/4);r++)for(let c=0;c<3;c++){x.fillStyle=(r+c)%2?'#b5532f':'#c8663e';x.fillRect(sx+c*5-(r%2?2:0),JGY-4-r*4,5,4);}x.fillStyle='#e9e2d0';x.fillRect(sx-2,JGY-4-Math.ceil(hp/4)*4,15,2);if(f.knocked){x.fillStyle='#c8663e';x.fillRect(sx+16,JGY-3,5,3);}return;}
+  const one=(px,ox)=>{pole(px,hp,f.col);pole(px+8+(ox||0),hp+1,f.col);
+    if(K==='kryss'){x.fillStyle=f.col;for(let i=0;i<9;i++){x.fillRect(px+2+i,JGY-2-i,1,1);x.fillRect(px+2+i,JGY-hp+i,1,1);}}
+    else{rail(px+2,JGY-hp,8+(ox||0),f.col,f.knocked&&!ox);rail(px+2,JGY-Math.floor(hp*0.6),8+(ox||0),f.col,false);rail(px+2,JGY-Math.floor(hp*0.25),8+(ox||0),f.col,false);}};
+  if(K==='oxer'){shadow(sx,22);one(sx,0);one(sx+12,0);x.fillStyle=f.col;if(!f.knocked)x.fillRect(sx+2,JGY-hp-1,20,1);return;}
+  if(K==='kombi'){shadow(sx,10);shadow(sx+26,10);one(sx,0);one(sx+26,0);return;}
+  shadow(sx,10);one(sx,0);}
+function jHorseDraw(hx){const x=JM.cx,c=JM.coat,body=jhex(c,1),dark=jhex(c,0.62),light=jhex(c,1.25);const L=ST.look||{};
+  let y=JGY,lift=0,tilt=0;const A=JM.air;
+  if(A&&!A.ref){const k=Math.min(1,A.t/A.dur);lift=Math.sin(k*Math.PI)*(JM.cls?JM.cls.hp+8:14);tilt=k<0.5?-1:1;}
+  if(A&&A.ref){tilt=-1;}
+  y=Math.floor(JGY-lift);const ph=((Math.floor(JM.anim)%4)+4)%4,jump=A&&!A.ref;const R=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(hx+a,y+b,w,h);};
+  x.fillStyle='rgba(80,50,20,.35)';x.fillRect(hx-14,JGY,30,2);
+  const legF=jump?[[8,-9,4],[11,-9,4]]:A&&A.ref?[[12,-9,9],[14,-9,9]]:[[[9,-9,9],[11,-9,7]],[[10,-9,8],[12,-9,9]],[[8,-9,9],[13,-9,8]],[[9,-9,7],[11,-9,9]]][ph];
+  const legH=jump?[[-12,-9,5],[-14,-9,4]]:A&&A.ref?[[-9,-9,9],[-11,-9,9]]:[[[-10,-9,8],[-12,-9,9]],[[-11,-9,9],[-9,-9,7]],[[-12,-9,7],[-10,-9,9]],[[-10,-9,9],[-13,-9,8]]][ph];
+  for(const[a,b,h]of legH){R(a,b,2,h,dark);R(a,b+h-1,2,1,'#2b2018');}
+  R(-13,-18+tilt,25,9,body);R(-12,-19+tilt,22,1,light);R(10,-19+tilt,4,9,body);
+  R(12,-24+tilt*2,4,7,body);R(14,-27+tilt*2,4,5,body);R(16,-28+tilt*2,7,4,body);R(21,-26+tilt*2,3,3,light);R(17,-30+tilt*2,2,2,body);R(19,-27+tilt*2,1,1,'#111');
+  R(11,-27+tilt*2,2,10,dark);R(13,-29+tilt*2,2,3,dark);
+  const tw=Math.sin(JM.anim*0.9)*2;R(-16,-18+tilt,3,4,dark);R(-17,-15+tilt+Math.round(tw),2,6,dark);
+  for(const[a,b,h]of legF){R(a,b,2,h,body);R(a,b+h-1,2,1,'#2b2018');}
+  const shirt=L.shirt||'#3fa79c',pants=L.pants||'#3b4a66',skin=L.skin||'#e8b892';
+  R(-3,-20+tilt,8,2,'#6b3f22');R(0,-23+tilt,3,7,pants);R(1,-17+tilt,2,3,'#2b2b33');R(-1,-31+tilt,5,8,shirt);R(3,-28+tilt,5,2,shirt);R(7,-27+tilt,2,1,skin);
+  R(0,-35+tilt,4,4,skin);R(-1,-37+tilt,6,3,'#22222a');R(4,-36+tilt,2,1,'#22222a');
+  x.fillStyle='#5a3a22';x.fillRect(hx+8,y-26+tilt,8,1);}
+
+/* the riding hall's contest and training actions open the minigame; the action waits (hold) until you are done */
+on('begin',d=>{const a=d&&d.a;if(!a||!a.contest||!ME.action||ME.action.a!==a)return;ME.action.hold=true;ME.action.mini=true;setTimeout(()=>jumpMini(a.contest==='train'?'train':'contest'),350);});
+
 /* ================= UI ================= */
 const el=(tag,attrs,...kids)=>{const e=document.createElement(tag);if(attrs)for(const k in attrs){const v=attrs[k];if(k==='class')e.className=v;else if(k==='html')e.innerHTML=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(v===true)e.setAttribute(k,'');else if(v!==false&&v!=null)e.setAttribute(k,v);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(c instanceof Node?c:document.createTextNode(String(c)));}return e;};
 const svg=(p,c)=>'<svg viewBox="0 0 24 24" class="'+(c||'')+'" aria-hidden="true">'+p+'</svg>';
@@ -4062,7 +4390,7 @@ function openSocialFor(n){closePanels();const body=el('div');body.appendChild(el
   for(const s of socialFor(n)){const why=socialReason(s,n);if(why==='hidden')continue;c.appendChild(actBtn(s.n,s.dur+' min'+(s.cost?' · '+s.cost+' kr':''),why,()=>doSocial(s,n)));}body.appendChild(c);showDialog(n.name,body,[['Stäng',null,'ghost']]);}
 const tapMark=(()=>{const m=new THREE.Mesh(new THREE.RingGeometry(0.22,0.36,40),new THREE.MeshBasicMaterial({color:lc(0xf5b958),transparent:true,side:THREE.DoubleSide,depthTest:false}));m.material.toneMapped=false;m.rotation.x=-Math.PI/2;m.visible=false;m.renderOrder=8;scene.add(m);return m;})();let tapMarkT=0;
 function marker(x,z){tapMark.position.set(x,0.06+(groundAt(x,z,ME.y).gy||0),z);tapMark.visible=true;tapMarkT=1;}
-addEventListener('keydown',e=>{if(gameMode!=='play'||e.target.tagName==='INPUT')return;keys[e.code]=true;
+addEventListener('keydown',e=>{if(gameMode!=='play'||e.target.tagName==='INPUT'||window.__miniOn)return;keys[e.code]=true;
   if(e.code==='Space'){paused=!paused;hudUpdate();e.preventDefault();}if(e.code==='Digit1'){paused=false;ST.speed=1;}if(e.code==='Digit2'){paused=false;ST.speed=3;}if(e.code==='Digit3'){paused=false;ST.speed=10;}
   if(e.code==='KeyQ')CAM.yaw+=0.35;if(e.code==='KeyE')CAM.yaw-=0.35;if(e.code==='KeyF'&&ctxFns[0]){ctxFns[0]();ctxKey='';renderCtx();}
   if(/Arrow/.test(e.code)&&(e.target===document.body||e.target===canvas))e.preventDefault();
@@ -4079,7 +4407,7 @@ function fitFar(){const asp=innerWidth/innerHeight;const tf=Math.tan(27.5*Math.P
 
 /* ---------- Start screen ---------- */
 const startEl=$('#start'),createEl=$('#create');
-async function showStart(){if(SHARED)await hsLeave();gameMode='menu';clearWorldPeople();ST=null;hud.hidden=true;closePanels();createEl.hidden=true;startEl.hidden=false;setWeather('sol');const host=$('#slots');host.innerHTML='';host.appendChild(el('p',{class:'muted'},'Letar efter sparade liv…'));
+async function showStart(){jForceClose();if(SHARED)await hsLeave();gameMode='menu';clearWorldPeople();ST=null;hud.hidden=true;closePanels();createEl.hidden=true;startEl.hidden=false;setWeather('sol');const host=$('#slots');host.innerHTML='';host.appendChild(el('p',{class:'muted'},'Letar efter sparade liv…'));
   const slots=[];for(let n=1;n<=4;n++)slots.push(await readSlot(n));host.innerHTML='';let free=0;
   slots.forEach((d,i)=>{const n=i+1;if(!d){free=free||n;return;}const job=d.job?CAREERS[d.job.id].titles[d.job.lvl]:'Utan jobb';
     host.appendChild(el('div',{class:'slot'},el('div',{class:'sw-face',style:'background:'+(d.look?d.look.shirt:'#888')}),el('div',{class:'slot-info'},el('b',null,d.name),el('span',null,'Dag '+(Math.floor(d.t/1440)+1)+' · '+job+' · '+kr(d.money))),
@@ -4211,7 +4539,7 @@ async function boot(hot){
   if(hot&&hot.st&&hot.st.look){startEl.hidden=true;beginPlay(hot.st,false);}else showStart();
 }
 {const H=window.claude&&window.claude.hot;const run=d=>{boot(d||{});};if(H&&typeof H.ready==='function')H.ready(run);else run(H&&H.data);}
-window.__game={hs:{HSN,HSID,hsCreate,hsSync,hsStatus,openRemoteFor,openSay,hsDonate,hsVote,hsCut,get SHARED(){return SHARED;},sharedT,hsCatchup,routineAt,sharedFunZone,hsWeatherAt,hsSocial,hsSay,hsBoard,hsLeave,hsRefreshShip,SAYS,NETB,hsChatSend,hsChatPull,hsMuted,hsSetMute,remSample,wrapChat,openDm,dmUnread,dmThreads,hsAdminPoll,openAdmin,hsMyReports,hsLoadFriends,hsFriend,hsBlock,showStart},doSocial,socialReason,econ:{ECON,PROJ,PJ,HOME_UP,GIFTS,donate,startProject,buyHome,completeProj,cutRibbon,inaugurate,homeBuild,siteBuild,trophyList,trivsel,ribbonPos,giftScore,favGifts,econInvite,guestsFree,pStage,pStatus,socialFor,GIFT_SOC,PLATS,DYNS},errs:()=>ERRS,tick:dm=>{advanceTime(dm);decayNeeds(dm);if(ME.action)tickAction(dm);},saveNow,workAction,reason,get ST(){return ST;},ME,NPCS:()=>NPCS,doAction,AB,ZB,setWeather,openAct,openMenu,applyJob,findPath,goTo,beginPlay,defaultState,CAM,get mode(){return gameMode;},renderer,
+window.__game={hs:{HSN,HSID,hsCreate,hsSync,hsStatus,openRemoteFor,openSay,hsDonate,hsVote,hsCut,get SHARED(){return SHARED;},sharedT,hsCatchup,routineAt,sharedFunZone,hsWeatherAt,hsSocial,hsSay,hsBoard,hsLeave,hsRefreshShip,SAYS,NETB,hsChatSend,hsChatPull,hsMuted,hsSetMute,remSample,wrapChat,openDm,dmUnread,dmThreads,hsAdminPoll,openAdmin,hsMyReports,hsLoadFriends,hsFriend,hsBlock,showStart},mini:{JM,jumpMini,jTap,jChoose,jAdvance,closeMini,jStart,JCLASS,jState},doSocial,socialReason,econ:{ECON,PROJ,PJ,HOME_UP,GIFTS,donate,startProject,buyHome,completeProj,cutRibbon,inaugurate,homeBuild,siteBuild,trophyList,trivsel,ribbonPos,giftScore,favGifts,econInvite,guestsFree,pStage,pStatus,socialFor,GIFT_SOC,PLATS,DYNS},errs:()=>ERRS,tick:dm=>{advanceTime(dm);decayNeeds(dm);if(ME.action)tickAction(dm);},saveNow,workAction,reason,get ST(){return ST;},ME,NPCS:()=>NPCS,doAction,AB,ZB,setWeather,openAct,openMenu,applyJob,findPath,goTo,beginPlay,defaultState,CAM,get mode(){return gameMode;},renderer,
   applyQuality,setPose:n=>{setPose(ME.person,n);},snapPose:()=>snapPose(ME.person),startMicro:id=>startMicro(ME.person,id),CRIT,PETS,get TT(){return TT;},scene,camera,updateCamera,setHour:h=>{ST.t=Math.floor(ST.t/1440)*1440+h*60;},POSES,makePerson,animPerson,PROF,sun,floor,hemi,ctx:()=>ctxOptions(),COURSE,SLIDE,renderFrame,eco:{STATUS,HORSES,hs,giveFx,hasFx,fxList,activeEvents,EVENTS,refreshReqs,REQ_T,emit,npcNeeds,ecoFunZone,startNpcMech,npcMechSpot,isEvent,coursePaid,reqProgress},RX,reactPulse,emote,startMicroP:(p,id)=>startMicro(p,id),npcState,critterSense:()=>critterSense(playerStim())};
 
 }catch(err){console.error(err);fail('Något gick fel: '+(err&&err.message));}
