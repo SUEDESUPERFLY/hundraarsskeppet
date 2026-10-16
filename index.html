@@ -325,6 +325,13 @@ body:not(.shared) #btnSay,body:not(.shared) .money .online{display:none}
 body.shared #speeds,body.shared .ffwd{display:none!important}
 .money .online{font:500 11px/1.2 var(--f-d);color:#3d7fc4;white-space:nowrap;grid-column:1/-1}
 .saygrid{gap:7px}.saygrid .chip{font-size:15px}.saygrid .chip.emo{font-size:21px;padding:5px 11px;line-height:1.1}
+.chatlog{display:flex;flex-direction:column;gap:6px;max-height:min(38vh,320px);min-height:84px;overflow-y:auto;touch-action:pan-y;padding:8px;margin-bottom:8px;border-radius:14px;background:var(--card2);border:1px solid var(--line)}
+.chatlog .cl{align-self:flex-start;max-width:86%;background:var(--card);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:6px 10px 5px;font:500 14px/1.3 var(--f-ui);user-select:text;-webkit-user-select:text;overflow-wrap:anywhere}
+.chatlog .cl.me{align-self:flex-end;background:#fff1dc;border-color:rgba(232,153,58,.35);border-radius:14px 14px 4px 14px}
+.chatlog .cl b{display:block;font:600 12px/1.2 var(--f-d);color:#3d7fc4;margin-bottom:1px}.chatlog .cl.me b{color:#b8741f}
+.chatlog .cl i{display:block;font-style:normal;font-size:10.5px;color:var(--soft);text-align:right;margin-top:1px}
+.chatrow{display:flex;gap:8px;margin-bottom:10px}.chatin{flex:1;min-width:0;background:#fff;border:1px solid var(--line2);border-radius:14px;padding:10px 13px;font:500 16px/1.2 var(--f-ui);color:var(--ink);user-select:text;-webkit-user-select:text}
+#btnSay{position:relative}#btnSay .badge{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#e0564a;color:#fff;font:700 11px/19px var(--f-ui);font-style:normal;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .codebox{width:100%;box-sizing:border-box;font:500 13px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:9px 10px;border-radius:10px;border:1px solid var(--line2);background:#fff;margin:6px 0;user-select:all;-webkit-user-select:all}
 .slot.shared{flex-wrap:wrap;background:linear-gradient(135deg,rgba(255,236,200,.9),rgba(255,250,240,.92));border:1px solid rgba(232,153,58,.35)}.slot.shared .row{margin-top:6px;width:100%}
 .card.friend.player.on b{color:#2f7d4a}
@@ -349,7 +356,7 @@ body.shared #speeds,body.shared .ffwd{display:none!important}
     </div>
     <div class="wallet">
       <div class="money glass"><b id="money">400 kr</b><span class="gp" id="gp">★ 0</span><span class="mood"><i id="moodDot"></i><span id="moodTxt">Glad</span></span><span class="online" id="online"></span></div>
-      <button type="button" id="btnSay" class="roundbtn glass" aria-label="Säg något"><svg viewBox="0 0 24 24"><path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H10l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/><path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01"/></svg><span>Säg</span></button>
+      <button type="button" id="btnSay" class="roundbtn glass" aria-label="Chatt"><svg viewBox="0 0 24 24"><path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H10l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/><path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01"/></svg><span>Chatt</span></button>
       <button type="button" id="btnMenu" class="roundbtn glass" aria-label="Öppna menyn"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="3.5"/><path d="M10.5 18.5h3"/></svg><span>Meny</span></button>
     </div>
   </div>
@@ -3240,10 +3247,13 @@ const HSID={get(){try{const v=JSON.parse(localStorage.getItem(HSID_KEY)||'null')
   parse(code){try{const s=String(code).trim().replace(/^HS-/i,'').replace(/-/g,'+').replace(/_/g,'/');const t=atob(s+'==='.slice((s.length+3)%4));const h=t.slice(0,32),sec=t.slice(32);if(!/^[0-9a-f]{32}$/.test(h)||sec.length<16)return null;
     return{id:h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20),secret:sec};}catch(e){return null;}}};
 
+/* chat text: no control characters, trimmed, at most 200 characters (the server applies the same rules) */
+function hsCleanChat(t){return Array.from(String(t||'').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g,' ').replace(/\s+/g,' ').trim()).slice(0,200).join('');}
+
 /* ---------- Supabase ---------- */
 function SupaNet(cfg){const sb=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:false,autoRefreshToken:false}});
   const rpc=async(fn,args)=>{const{data,error}=await sb.rpc(fn,args||{});if(error)throw new Error(error.message||String(error));return data;};
-  let ch=null;const H={};let syncCb=null,connCb=null,meta={};
+  const H={};let syncCb=null,connCb=null;
   return{kind:'supabase',
     async now(){const t0=Date.now();const v=await rpc('hs_now');const t1=Date.now();return{server:+v,rtt:t1-t0,local:(t0+t1)/2};},
     register:(me,name)=>rpc('hs_register',{p_id:me.id,p_secret:me.secret,p_name:name}),
@@ -3255,14 +3265,34 @@ function SupaNet(cfg){const sb=window.supabase.createClient(cfg.url,cfg.key,{aut
     vote:(me,p)=>rpc('hs_vote',{p_id:me.id,p_secret:me.secret,p_project:p}),
     donate:(me,p,amount,work)=>rpc('hs_donate',{p_id:me.id,p_secret:me.secret,p_project:p,p_amount:amount,p_work:work}),
     cut:me=>rpc('hs_cut',{p_id:me.id,p_secret:me.secret}),
-    rt:{join(uid,m){meta=m;ch=sb.channel('hs-ship',{config:{presence:{key:uid},broadcast:{self:false}}});
-        ch.on('presence',{event:'sync'},()=>{if(!syncCb)return;const st=ch.presenceState();syncCb(Object.keys(st).map(k=>{const a=st[k];return Object.assign({},a[a.length-1],{uid:k});}));});
-        for(const ev of['mv','say','soc','fx','ship'])ch.on('broadcast',{event:ev},m=>{const f=H[ev];if(f)f(m.payload||{});});
-        ch.subscribe(async s=>{if(s==='SUBSCRIBED'){try{await ch.track(meta);}catch(e){}if(connCb)connCb(true);}else if(s==='CLOSED'||s==='CHANNEL_ERROR'||s==='TIMED_OUT'){if(connCb)connCb(false);}});},
-      track(m){meta=m;if(ch)return ch.track(m).catch(()=>{});},
-      send(ev,payload){if(ch)return ch.send({type:'broadcast',event:ev,payload}).catch(()=>{});},
-      on(ev,f){H[ev]=f;},onSync(f){syncCb=f;},onConn(f){connCb=f;},
-      leave(){if(ch){try{ch.untrack();sb.removeChannel(ch);}catch(e){}ch=null;}}}};}
+    chatSend:(me,body)=>rpc('hs_chat_send',{p_id:me.id,p_secret:me.secret,p_body:body}),
+    chatSince:after=>rpc('hs_chat_since',{p_after:after||0}),
+    rt:supaRt(sb,H,()=>syncCb,f=>{syncCb=f;},()=>connCb,f=>{connCb=f;})};}
+/* Realtime with the free plan's rules in mind:
+   - Presence is for slow state only. Supabase closes a client's channel if it sends more than 5 presence updates in 30 s,
+     so presence is tracked once per join (name, look, home) and never more than 3 times per 30 s.
+   - Moves are fire-and-forget broadcasts. They are dropped while the channel is down instead of falling back to one
+     HTTP request per move (that fallback is what made remote players stutter).
+   - A channel the server closes is rejoined with backoff; socket drops are rejoined by supabase-js itself. */
+function supaRt(sb,H,getSync,setSync,getConn,setConn){const EVS=['mv','say','soc','fx','ship','chat'];
+  let ch=null,joined=false,leaving=true,gen=0,retry=0,rejoinT=0,trackT=0,watchT=0,uidK='',meta={},metaKey='';const TR=[];
+  const S={joined:false,rejoins:0,mvOut:0,mvIn:0,dropped:0,lastClose:'',since:0};
+  function doTrack(){if(!joined||!ch)return;const now=Date.now();while(TR.length&&now-TR[0]>31000)TR.shift();
+    if(TR.length>=3){clearTimeout(trackT);trackT=setTimeout(doTrack,31000-(now-TR[0])+100);return;}TR.push(now);ch.track(meta).catch(()=>{});}
+  function open(){const g=++gen;const c=sb.channel('hs-ship',{config:{presence:{key:uidK},broadcast:{self:false}}});ch=c;
+    c.on('presence',{event:'sync'},()=>{const f=getSync();if(g!==gen||!f)return;const st=c.presenceState();f(Object.keys(st).map(k=>{const a=st[k];return Object.assign({},a[a.length-1],{uid:k});}));});
+    for(const ev of EVS)c.on('broadcast',{event:ev},m=>{if(g!==gen)return;if(ev==='mv')S.mvIn++;const f=H[ev];if(f)f(m.payload||{});});
+    c.subscribe((s,err)=>{if(g!==gen)return;const cc=getConn();
+      if(s==='SUBSCRIBED'){joined=true;S.joined=true;retry=0;S.since=Date.now();doTrack();if(cc)cc(true);}
+      else{joined=false;S.joined=false;S.lastClose=s+(err&&err.message?': '+err.message:'');if(cc)cc(false);if(s==='CLOSED'&&!leaving)rejoin();}});}
+  function rejoin(){if(rejoinT||leaving)return;const d=Math.min(30000,1000*Math.pow(2,retry++))+Math.random()*400;
+    rejoinT=setTimeout(()=>{rejoinT=0;if(leaving)return;const old=ch;ch=null;gen++;if(old){try{sb.removeChannel(old);}catch(e){}}S.rejoins++;open();},d);}
+  return{join(uid,m){leaving=false;uidK=uid;meta=m;metaKey=JSON.stringify(m);retry=0;open();
+      clearInterval(watchT);watchT=setInterval(()=>{if(!leaving&&!joined&&!rejoinT&&Date.now()-S.since>25000){S.since=Date.now();rejoin();}},5000);},
+    track(m){const k=JSON.stringify(m);meta=m;if(k===metaKey)return Promise.resolve();metaKey=k;doTrack();return Promise.resolve();},
+    send(ev,payload){if(!ch)return Promise.resolve();if(!joined&&ev==='mv'){S.dropped++;return Promise.resolve();}if(ev==='mv')S.mvOut++;return ch.send({type:'broadcast',event:ev,payload}).catch(()=>{});},
+    on(ev,f){H[ev]=f;},onSync(f){setSync(f);},onConn(f){setConn(f);},stats:()=>Object.assign({},S),
+    leave(){leaving=true;clearTimeout(rejoinT);rejoinT=0;clearTimeout(trackT);clearInterval(watchT);gen++;joined=false;S.joined=false;if(ch){try{sb.removeChannel(ch);}catch(e){}ch=null;}}};}
 
 /* ---------- Local mirror (tests, demos) ---------- */
 function LocalNet(){const K='lnet-';const rd=k=>{try{return JSON.parse(localStorage.getItem(K+k)||'null');}catch(e){return null;}},wr=(k,v)=>localStorage.setItem(K+k,JSON.stringify(v));
@@ -3303,7 +3333,12 @@ function LocalNet(){const K='lnet-';const rd=k=>{try{return JSON.parse(localStor
     async donate(me,p,amount,work){auth(me);const s=S().state;if(s.cur!==p)throw new Error('not_current');if(amount<0||amount>100000||work<0||work>600)throw new Error('range');const d=D();d.push({player:me.id,project:p,amount:+amount,work:+work,t:now()});wr('don',d);return wait(tick());},
     async cut(me){const p=auth(me);const S0=S();const s=S0.state;const g=gt();if(!s.inaug||g<s.inaug.t0||g>=s.inaug.t1)return wait({ok:false,ship:shipGet()});
       const pid=s.inaug.p;s.open=Object.assign({},s.open,{[pid]:g});s.cut=Object.assign({},s.cut,{[pid]:{id:me.id,name:p.name}});delete s.inaug;s.round=(s.round||0)+1;wr('ship',{state:s,version:S0.version+1});return wait({ok:true,ship:shipGet()});},
-    rt:{join(uid,m){myUid=uid;meta=m;if(bc){bc.postMessage({k:'hello',uid,meta});clearInterval(hb);hb=setInterval(()=>{bc.postMessage({k:'hello',uid:myUid,meta});emitSync();},3000);}setTimeout(()=>{emitSync();if(connCb)connCb(!!bc);},50);},
+    async chatSend(me,body){const p=auth(me);const b=hsCleanChat(body);if(!b)throw new Error('empty');const C=rd('chat')||[];const t=now();
+      if(C.filter(c=>c.u===me.id&&t-c.ts<10000).length>=6)throw new Error('rate');const row={id:(C.length?C[C.length-1].id:0)+1,u:me.id,n:p.name,b,t:new Date(t).toISOString(),ts:t};
+      C.push(row);wr('chat',C.filter(c=>t-c.ts<3*864e5).slice(-200));return wait(row);},
+    async chatSince(after){const C=(rd('chat')||[]).filter(c=>c.id>(after||0));return wait(C.slice(-50));},
+    rt:{stats:()=>({joined:!!bc,rejoins:0,mvOut:0,mvIn:0,dropped:0,lastClose:'',since:0}),
+      join(uid,m){myUid=uid;meta=m;if(bc){bc.postMessage({k:'hello',uid,meta});clearInterval(hb);hb=setInterval(()=>{bc.postMessage({k:'hello',uid:myUid,meta});emitSync();},3000);}setTimeout(()=>{emitSync();if(connCb)connCb(!!bc);},50);},
       track(m){meta=m;if(bc&&myUid)bc.postMessage({k:'hello',uid:myUid,meta});emitSync();return Promise.resolve();},
       send(ev,payload){if(bc&&myUid)bc.postMessage({k:'ev',uid:myUid,ev,payload});return Promise.resolve();},
       on(ev,f){H[ev]=f;},onSync(f){syncCb=f;},onConn(f){connCb=f;},
@@ -3317,13 +3352,17 @@ function hsBackend(){try{const q=new URLSearchParams(location.search);if(q.get('
    - CLOCK      One real hour = one ship day, derived from the server's time. Nobody pauses or fast-forwards.
    - DETERMINISM NPCs live in fixed cabins and pick places from a hash of (ship, person, day, two-hour block), and the
                 sprinkler weather follows the clock, so every player sees the same Elsa in the same kitchen in the same rain.
-   - PRESENCE   Who is aboard and where (broadcast moves at ~2.5 Hz while moving, on change otherwise).
+   - PRESENCE   Who is aboard (presence, once per join) and where (broadcast moves at 4 Hz while moving, stamped with ship time;
+                the others draw you 0.3 s behind, interpolated between stamps, so network jitter doesn't show).
+   - CHAT       Free text goes through the server (it checks who you are, rate-limits and keeps three days); a broadcast
+                only nudges the others to fetch it, so nobody can put words in someone else's mouth.
    - GHOSTS     Players who are logged out keep living their routine (sleep, meals, work) and are seen as inhabitants;
                 when they come back, the autopilot has done the same for their own save — without taking initiatives.
    - PROJECTS   The ship's building projects are one shared state machine on the server (vote → build → inaugurate). */
 const NETB=hsBackend();
 const HS_SEED=424242;
-const HSN={me:null,off:0,rtt:0,ship:null,players:[],peers:[],rem:new Map(),online:false,conn:false,lastMv:0,mvKey:'',wasMoving:false,lx:0,lz:0,
+const HSN={me:null,off:0,rtt:0,ship:null,players:[],peers:[],rem:new Map(),online:false,conn:false,lastMv:0,mvKey:'',wasMoving:false,lx:0,lz:0,svx:0,svz:0,
+  chat:[],chatLast:0,unread:0,chatT:0,chatBusy:false,chatAgain:false,chatSentT:0,chatOff:false,fc:0,fT:0,fps:0,rateIn:0,rateOut:0,rateT:0,rateS:null,
   saveBusy:false,saveAgain:false,tickT:0,plT:0,syncT:0,shipT:0,workAcc:0,joinT:0,metaKey:'',metaT:0,toldNet:0,myVote:null,openSeen:null,lastPeers:new Set(),homesKey:''};
 let SHARED=false;
 const sharedNow=()=>Date.now()+HSN.off;
@@ -3388,21 +3427,31 @@ function hsStart(st,isNew,tSaved){SHARED=true;document.body.classList.add('share
   beginPlay(st,isNew);/* beginPlay → startGame → econInit, buildNPCs (fixed cabins), saves via hsSave */
   const now=sharedT();let rep=null;if(tSaved!=null&&now>ST.t+1)rep=hsCatchup(ST.t,now);else ST.t=now;
   setWeather(hsWeatherAt(ST.t));ST.lastYear=Math.max(ST.lastYear||1,shipYear());catchupToast(rep);
-  HSN.joinT=performance.now();HSN.rem.forEach(remDrop);HSN.rem.clear();HSN.openSeen=null;HSN.workAcc=0;
-  const rt=NETB.rt;rt.onSync(hsOnSync);rt.onConn(c=>{HSN.conn=c;});rt.on('mv',hsOnMv);rt.on('say',hsOnSay);rt.on('soc',hsOnSoc);rt.on('fx',hsOnFx);rt.on('ship',()=>{HSN.shipT=performance.now()+800;});
-  rt.join(HSN.me.id,hsMeta());hsRefreshShip(true);hsLoadPlayers();setTimeout(hsSave,2500);}
+  HSN.joinT=performance.now();HSN.rem.forEach(remDrop);HSN.rem.clear();HSN.openSeen=null;HSN.workAcc=0;HSN.chat=[];HSN.chatLast=0;HSN.unread=0;HSN.chatT=performance.now()+15000;updateChatBadge();
+  const rt=NETB.rt;rt.onSync(hsOnSync);rt.onConn(c=>{HSN.conn=c;});rt.on('mv',hsOnMv);rt.on('say',hsOnSay);rt.on('soc',hsOnSoc);rt.on('fx',hsOnFx);rt.on('ship',()=>{HSN.shipT=performance.now()+800;});rt.on('chat',()=>{setTimeout(()=>hsChatPull(false),40+Math.random()*160);});
+  rt.join(HSN.me.id,hsMeta());hsRefreshShip(true);hsLoadPlayers();hsChatPull(true);setTimeout(hsSave,2500);}
 async function hsLeave(){if(!SHARED)return;try{await hsSave();}catch(e){}try{NETB.rt.leave();}catch(e){}HSN.rem.forEach(remDrop);HSN.rem.clear();freeDyn('rhomes');HSN.homesKey='';SHARED=false;document.body.classList.remove('shared');}
 
 /* ---------- realtime ---------- */
-function hsMeta(){const z=zoneAt(ME.x,ME.z);return{name:ST.name,look:ST.look,home:ST.home,z:z?z.id:'',a:ME.action?ME.action.a.n.slice(0,40):''};}
+function hsMeta(){return{name:ST.name,look:ST.look,home:ST.home};}
 function hsOnSync(list){const now=new Set();HSN.peers=list;for(const p of list){if(!p.uid||p.uid===HSN.me.id)continue;now.add(p.uid);let r=HSN.rem.get(p.uid);
     if(!r){r=remMake(p.uid,p);if(!r)continue;}else if(r.ghost){r.ghost=false;r.path=null;}r.online=true;r.meta=p;if(p.name&&p.name!==r.name)remRename(r,p.name);
     if(!HSN.lastPeers.has(p.uid)&&performance.now()-HSN.joinT>4000)toast((p.name||'Någon')+' gick ombord.','social');}
-  for(const u of HSN.lastPeers)if(!now.has(u)){const r=HSN.rem.get(u);if(r){r.online=false;r.net=null;if(performance.now()-HSN.joinT>4000)toast(r.name+' lämnade skeppet. '+r.name+' lever vidare ombord.','info');hsGhostify(r);}}
+  for(const u of HSN.lastPeers)if(!now.has(u)){const r=HSN.rem.get(u);if(r){r.online=false;r.net=null;r.buf=[];if(performance.now()-HSN.joinT>4000)toast(r.name+' lämnade skeppet. '+r.name+' lever vidare ombord.','info');hsGhostify(r);}}
   HSN.lastPeers=now;}
 const POSE_OK=new Set(['stand','sit','sitEat','read','lie','liefloor','swim','ride','dance','work','talk','listen','games','swing','coaster','away','sitTalk','walkabout']);
+const MV_MS=250,INTERP_MS=320;
 function hsOnMv(m){if(!m||!m.u||m.u===(HSN.me&&HSN.me.id))return;let r=HSN.rem.get(m.u);if(!r)return;if(![m.x,m.z].every(Number.isFinite))return;
-  r.online=true;r.ghost=false;r.net={x:+m.x,z:+m.z,h:+m.h||0,vx:+m.vx||0,vz:+m.vz||0,p:POSE_OK.has(m.p)?m.p:'stand',y:clamp(+m.y||0,-1,12),sy:+m.sy||0.46,ly:+m.ly||0.6,mo:m.m==='ride'?'ride':m.m||'',hi:m.hi,t:performance.now()};}
+  const now=sharedNow();const ts=Number.isFinite(+m.t)&&Math.abs(now-m.t)<60000?+m.t:now;const tr=now-ts;
+  r.lagMin=r.lagMin==null?tr:Math.min(tr,r.lagMin+3);   /* lowest recent transit (plus clock offset error); creeps up so it can recover */
+  const snap={t:ts,x:+m.x,z:+m.z,h:+m.h||0,vx:clamp(+m.vx||0,-12,12),vz:clamp(+m.vz||0,-12,12),p:POSE_OK.has(m.p)?m.p:'stand',y:clamp(+m.y||0,-1,12),sy:+m.sy||0.46,ly:+m.ly||0.6,mo:m.m==='ride'?'ride':m.m||'',hi:m.hi};
+  const B=r.buf||(r.buf=[]);if(B.length&&ts<=B[B.length-1].t)return;B.push(snap);if(B.length>16)B.shift();
+  if(typeof m.zn==='string'&&ZB[m.zn])r.zone=m.zn;r.online=true;r.ghost=false;r.net=snap;}
+/* where to draw a remote player now: INTERP_MS behind their stamps, between the two snapshots around that moment */
+function remSample(r){const B=r.buf;if(!B||!B.length)return null;const rt=sharedNow()-(r.lagMin||0)-INTERP_MS;let i=B.length-1;while(i>0&&B[i].t>rt)i--;const a=B[i],b=B[i+1];
+  if(rt<a.t)return{x:a.x,z:a.z,s:a};
+  if(b){const f=clamp((rt-a.t)/Math.max(1,b.t-a.t),0,1);return{x:a.x+(b.x-a.x)*f,z:a.z+(b.z-a.z)*f,s:Math.hypot(b.x-a.x,b.z-a.z)>9&&f>0.5?b:a,jump:Math.hypot(b.x-a.x,b.z-a.z)>9};}
+  const e=Math.min(0.45,(rt-a.t)/1000);return{x:a.x+a.vx*e,z:a.z+a.vz*e,s:a};}
 
 /* ---------- remote players ---------- */
 function remMake(uid,meta){if(HSN.rem.size>=24||!meta||!meta.look)return null;const look=sanLook(meta.look);const person=makePerson(look);scene.add(person.root);
@@ -3412,7 +3461,7 @@ function remMake(uid,meta){if(HSN.rem.size>=24||!meta||!meta.look)return null;co
 function remRename(r,name){r.name=String(name).slice(0,18);r.person.root.remove(r.tag);r.tag.material.map.dispose();r.tag.material.dispose();r.tag=makeSprite(r.name,'#ffe2b0',0.34);r.tag.position.y=2.3;r.person.root.add(r.tag);}
 function remDrop(r){dropBubble(r.person);scene.remove(r.person.root);if(r.horse)scene.remove(r.horse.root);}
 function sanLook(l){const ok=(v,L)=>L.includes(v)?v:L[0];l=l||{};return{skin:ok(l.skin,SKIN),hair:ok(l.hair,HAIR),style:STYLES.some(s=>s.id===l.style)?l.style:'kort',shirt:ok(l.shirt,SHIRT),pants:ok(l.pants,PANTS),shoes:ok(l.shoes,SHOES)};}
-function hsGhostify(r){const p=HSN.players.find(x=>x.id===r.uid);r.ghost=true;r.online=false;r.net=null;r.pub=p?p.pub:r.pub||{home:(r.meta||{}).home};r.plan=null;r.path=null;}
+function hsGhostify(r){const p=HSN.players.find(x=>x.id===r.uid);r.ghost=true;r.online=false;r.net=null;r.buf=[];r.pub=p?p.pub:r.pub||{home:(r.meta||{}).home};r.plan=null;r.path=null;}
 async function hsLoadPlayers(){try{const L=await NETB.players();HSN.players=L;const seen=new Set();
     for(const p of L){if(p.id===HSN.me.id)continue;seen.add(p.id);const fresh=Date.now()-p.seen<14*864e5;let r=HSN.rem.get(p.id);
       if(!r&&fresh){r=remMake(p.id,Object.assign({name:p.name},p.pub||{}));if(r)hsGhostify(r);}
@@ -3425,16 +3474,17 @@ function hsBuildHomes(){const L=HSN.players.filter(p=>p.id!==HSN.me.id&&p.pub&&p
 const cabinOwner=zid=>{if(!SHARED)return null;const p=HSN.players.find(x=>x.pub&&x.pub.home===zid&&x.id!==(HSN.me&&HSN.me.id));return p?p.name:null;};
 function hsUpdateRemotes(dt){const cx=camera.position.x,cz=camera.position.z;
   HSN.rem.forEach(r=>{const p=r.person;let spd=0;
-    if(r.online&&r.net){const N=r.net;const age=Math.min(1,(performance.now()-N.t)/1000);const tx=N.x+N.vx*age,tz=N.z+N.vz*age;const ox=r.x,oz=r.z;const dx=tx-r.x,dz=tz-r.z,d=Math.hypot(dx,dz);
-      if(d>9){r.x=tx;r.z=tz;}else{const k=dk(7,dt);r.x+=dx*k;r.z+=dz*k;}spd=Math.hypot(r.x-ox,r.z-oz)/Math.max(dt,1e-3);
+    const smp=r.online&&r.net?remSample(r):null;
+    if(smp){const N=smp.s;const ox=r.x,oz=r.z;const dx=smp.x-r.x,dz=smp.z-r.z,d=Math.hypot(dx,dz);
+      if(d>9||smp.jump){r.x=smp.x;r.z=smp.z;}else{const k=dk(20,dt);r.x+=dx*k;r.z+=dz*k;}spd=Math.min(12,Math.hypot(r.x-ox,r.z-oz)/Math.max(dt,1e-3));r.spd=(r.spd||0)+(spd-(r.spd||0))*dk(8,dt);spd=r.spd;
       if(spd>0.35)faceTo(r,Math.atan2(r.x-ox,r.z-oz),dt,9);else{r.h=wrapA(r.h+wrapA(N.h-r.h)*dk(6,dt));}
       r.y+=(N.y-r.y)*dk(10,dt);const riding=N.mo==='ride';
       if(riding){if(!r.horse){r.horse=makeAnimal('horse',0x8a5a35,true);scene.add(r.horse.root);}r.horse.root.visible=true;r.horse.root.position.set(r.x,0,r.z);r.horse.root.rotation.y=r.h;animAnimal(r.horse,dt,spd,{});setPose(p,'ride');
         const c=N.hi!=null&&HORSES[N.hi];if(c&&!c.ridden&&ME.mount!==c){c.x=r.x;c.z=r.z;c.vx=c.vz=0;c.a.root.visible=false;}}
       else{if(r.horse)r.horse.root.visible=false;const pose=spd>0.35&&N.y<0.5&&!['swim','coaster'].includes(N.p)?'stand':N.p;setPose(p,pose);p.seatY=N.sy;p.lieY=N.ly;p.swimY=N.y;}}
     else if(r.ghost){spd=ghostTick(r,dt);}
-    const hid=Math.hypot(r.x-cx,r.z-cz)>CULL;p.root.visible=!hid;
-    p.root.position.set(r.x,(r.online&&r.net)?(['swim','coaster'].includes(r.net.p)||r.y>0.3?r.y:0):groundAt(r.x,r.z,0).gy,r.z);p.root.rotation.y=r.h;p.turnV=r.turnV||0;
+    const hid=Math.hypot(r.x-cx,r.z-cz)>CULL;p.root.visible=!hid;const NP=smp?smp.s:null;
+    p.root.position.set(r.x,NP?(['swim','coaster'].includes(NP.p)||r.y>0.3?r.y:0):groundAt(r.x,r.z,0).gy,r.z);p.root.rotation.y=r.h;p.turnV=r.turnV||0;
     if(!hid)animPerson(p,dt,spd,{idle:spd<0.2,wx:weather});tickBubble(p,dt);
     const dme=Math.hypot(r.x-ME.x,r.z-ME.z);const tv=!hid&&dme<22&&p.pose!=='away';r.tag.visible=tv;if(tv){r.tag.material.opacity=clamp((22-dme)/5,0,1)*(r.online?1:0.6);r.tag.position.y=LIE_SET.has(p.pose)?p.C[K.hipY]+0.75:p.C[K.hipY]+1.45;}});}
 function ghostTick(r,dt){const pub=r.pub||{};const R=routineAt(pub.home||'park',pub.job?{id:pub.job.id,at:pub.job.at}:null,ST.t);const p=r.person;
@@ -3448,15 +3498,16 @@ function ghostTick(r,dt){const pub=r.pub||{};const R=routineAt(pub.home||'park',
   const s=r.spot;if(s){p.seatY=s.y||0.46;p.lieY=s.y||0.6;setPose(p,s.pose);}return 0;}
 
 /* ---------- my movement out ---------- */
-function hsSendMv(dt){const p=ME.person;if(!p)return;const vx=(ME.x-HSN.lx)/Math.max(dt,1e-3),vz=(ME.z-HSN.lz)/Math.max(dt,1e-3);HSN.lx=ME.x;HSN.lz=ME.z;
-  const moving=Math.hypot(vx,vz)>0.2;const riding=ME.mode==='ride'||!!(ME.action&&ME.action.pose==='ride');
+function hsSendMv(dt){const p=ME.person;if(!p)return;let vx=(ME.x-HSN.lx)/Math.max(dt,1e-3),vz=(ME.z-HSN.lz)/Math.max(dt,1e-3);HSN.lx=ME.x;HSN.lz=ME.z;
+  if(Math.hypot(vx,vz)>14){vx=vz=0;HSN.svx=HSN.svz=0;}const kv=dk(10,dt);HSN.svx+=(vx-HSN.svx)*kv;HSN.svz+=(vz-HSN.svz)*kv;
+  const moving=Math.hypot(HSN.svx,HSN.svz)>0.2;const riding=ME.mode==='ride'||!!(ME.action&&ME.action.pose==='ride');
   const key=p.pose+'|'+(ME.mode||'')+'|'+(ME.action?ME.action.a.id:'')+'|'+(ME.seated?1:0)+'|'+riding;const now=performance.now();
-  if(key!==HSN.mvKey||(moving&&now-HSN.lastMv>380)||(!moving&&HSN.wasMoving)||now-HSN.lastMv>8000){HSN.lastMv=now;HSN.mvKey=key;
-    const r2=v=>Math.round(v*100)/100;NETB.rt.send('mv',{u:HSN.me.id,x:r2(ME.x),z:r2(ME.z),h:r2(ME.h),vx:moving?r2(vx):0,vz:moving?r2(vz):0,p:p.pose,y:r2(ME.y||(p.pose==='swim'?p.swimY:0)||0),sy:r2(p.seatY||0.46),ly:r2(p.lieY||0.6),m:riding?'ride':(ME.mode||''),hi:ME.mount&&ME.mount.hi!=null?ME.mount.hi:null});}
+  if(key!==HSN.mvKey||(moving&&now-HSN.lastMv>MV_MS)||(!moving&&HSN.wasMoving)||now-HSN.lastMv>8000){HSN.lastMv=now;HSN.mvKey=key;const zn=zoneAt(ME.x,ME.z);
+    const r2=v=>Math.round(v*100)/100;NETB.rt.send('mv',{u:HSN.me.id,t:Math.round(sharedNow()),zn:zn?zn.id:'',x:r2(ME.x),z:r2(ME.z),h:r2(ME.h),vx:moving?r2(HSN.svx):0,vz:moving?r2(HSN.svz):0,p:p.pose,y:r2(ME.y||(p.pose==='swim'?p.swimY:0)||0),sy:r2(p.seatY||0.46),ly:r2(p.lieY||0.6),m:riding?'ride':(ME.mode||''),hi:ME.mount&&ME.mount.hi!=null?ME.mount.hi:null});}
   HSN.wasMoving=moving;
-  const m=hsMeta();const mk=m.z+'|'+m.a;if(mk!==HSN.metaKey&&now-HSN.metaT>2500){HSN.metaKey=mk;HSN.metaT=now;NETB.rt.track(m);}}
+  if(now-HSN.metaT>5000){HSN.metaT=now;NETB.rt.track(hsMeta());}}   /* the backend only sends it when name, look or home changed */
 
-/* ---------- words and interactions (preset only) ---------- */
+/* ---------- words and interactions ---------- */
 const SAYS=['Hej!','Hej då!','Ja!','Nej.','Tack!','Haha!','Kom hit!','Följ med mig!','Ska vi fika?','Ska vi bada?','Ska vi rida?','Vänta på mig!','Snyggt!','Grattis!','Förlåt!','Sov gott!','Vad gör du?','Vilken fin dag!',
   '👋','❤️','😂','😮','👍','🎉','🐴','☕','🌧️','⭐',
   'Hej! Hur är läget?','Vad gör du idag?','Vilken fin dag ombord!','Har du sett hästarna i skogen?','Ska vi hitta på något?',
@@ -3530,8 +3581,59 @@ function hsTick(dt,dm){if(!SHARED||!ST)return;const now=performance.now();
   if(now>HSN.tickT){HSN.tickT=now+20000;hsRefreshShip(true);}
   else if(HSN.shipT&&now>HSN.shipT){HSN.shipT=0;hsRefreshShip(false);}
   if(now>HSN.plT){HSN.plT=now+60000;if(HSN.joinT&&now-HSN.joinT>1500)hsLoadPlayers();}
-  if(now>HSN.syncT){HSN.syncT=now+300000;if(HSN.joinT&&now-HSN.joinT>1000)hsSync().catch(()=>{});}
+  if(now>HSN.syncT){HSN.syncT=now+60000;if(HSN.joinT&&now-HSN.joinT>1000)hsSync().catch(()=>{});}
+  if(now>HSN.chatT){HSN.chatT=now+15000;hsChatPull(false);}
+  HSN.fc++;if(now-HSN.fT>2000){const el_=(now-HSN.fT)/1000,S=NETB.rt.stats?NETB.rt.stats():null;HSN.fps=Math.round(HSN.fc/el_);HSN.fc=0;
+    if(S&&HSN.rateS){HSN.rateIn=(S.mvIn-HSN.rateS.mvIn)/el_;HSN.rateOut=(S.mvOut-HSN.rateS.mvOut)/el_;}HSN.rateS=S;HSN.fT=now;}
   if(Math.floor(now/500)!==Math.floor((now-dt*1000)/500))hsFund();}
+
+/* ---------- chat (free text through the server) ---------- */
+const MUTE_KEY='hs-mute';
+function hsMuted(){try{return new Set(JSON.parse(localStorage.getItem(MUTE_KEY)||'[]'));}catch(e){return new Set();}}
+function hsSetMute(uid,on){const m=hsMuted();if(on)m.add(uid);else m.delete(uid);try{localStorage.setItem(MUTE_KEY,JSON.stringify([...m]));}catch(e){}}
+const chatOpen=()=>{const L=document.getElementById('chatlog');return!!(L&&L.isConnected&&!dlg.hidden);};
+const trunc=(t,n)=>{const a=Array.from(t);return a.length>n?a.slice(0,n-1).join('')+'…':t;};
+async function hsChatPull(quiet){if(!SHARED||!NETB.chatSince||!HSN.me)return;if(HSN.chatBusy){HSN.chatAgain=true;return;}HSN.chatBusy=true;
+  try{const rows=await NETB.chatSince(HSN.chatLast);if(!SHARED)return;if(HSN.chatOff){HSN.chatOff=false;if(chatOpen())openSay();}const mute=hsMuted();let fresh=0;
+    for(const x of rows||[]){const id=+x.id;if(!(id>HSN.chatLast))continue;HSN.chatLast=id;const b=hsCleanChat(x.b);if(!b)continue;
+      const row={id,u:String(x.u),n:String(x.n||'?').slice(0,18),b,t:x.t};if(HSN.chat.some(c=>c.id===id))continue;HSN.chat.push(row);
+      if(quiet||row.u===HSN.me.id||mute.has(row.u))continue;fresh++;
+      const rm=HSN.rem.get(row.u);if(rm&&rm.person.root.visible)chatBubble(rm.person,b);
+      if(!chatOpen()){HSN.unread++;toast(row.n+': '+trunc(b,90),'social',{label:'Svara',fn:openSay});}}
+    if(HSN.chat.length>80)HSN.chat.splice(0,HSN.chat.length-80);if(fresh||quiet)renderChatLog();updateChatBadge();}
+  catch(e){if(chatMissing(e)){HSN.chatOff=true;HSN.chatT=performance.now()+300000;}else hsNetErr(e);}finally{HSN.chatBusy=false;if(HSN.chatAgain){HSN.chatAgain=false;setTimeout(()=>hsChatPull(false),250);}}}
+/* the server may not have the chat yet: then the quick phrases still work as bubbles and the text field waits */
+const chatMissing=e=>/Could not find the function|PGRST202|does not exist|not found/i.test(String(e&&e.message||e));
+async function hsChatSend(text){const b=hsCleanChat(text);if(!b||!SHARED)return false;const now=performance.now();
+  if(HSN.chatOff){const i=SAYS.indexOf(b);if(i>=0){hsSay(i);return true;}toast('Fritextchatten är inte påslagen på skeppet än.','info');return false;}
+  if(now-HSN.chatSentT<1200){toast('Vänta en liten stund mellan meddelandena.','info');return false;}HSN.chatSentT=now;
+  try{const x=await NETB.chatSend(HSN.me,b);chatBubble(ME.person,b);
+    if(x&&x.id!=null&&!HSN.chat.some(c=>c.id===+x.id))HSN.chat.push({id:+x.id,u:HSN.me.id,n:ST.name,b,t:x.t});
+    renderChatLog();NETB.rt.send('chat',{});hsChatPull(false);return true;}
+  catch(e){const m=String(e&&e.message||e);if(chatMissing(e)){HSN.chatOff=true;const i=SAYS.indexOf(b);if(i>=0){hsSay(i);return true;}toast('Fritextchatten är inte påslagen på skeppet än.','info');return false;}if(/rate/.test(m))toast('Du skriver lite för snabbt – vänta några sekunder.','info');else if(!/empty/.test(m))hsNetErr(e);return false;}}
+function renderChatLog(){const L=document.getElementById('chatlog');if(!L)return;const mute=hsMuted();L.innerHTML='';
+  const rows=HSN.chat.filter(c=>!mute.has(c.u)).sort((a,b)=>a.id-b.id).slice(-60);
+  if(!rows.length)L.appendChild(el('p',{class:'muted small'},'Inga meddelanden än. Säg hej!'));
+  for(const c of rows){const t=new Date(c.t);const hm=isNaN(t)?'':String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+    L.appendChild(el('div',{class:'cl'+(c.u===HSN.me.id?' me':'')},el('b',null,c.u===HSN.me.id?'Du':c.n),el('span',{class:'tx'},c.b),el('i',null,hm)));}
+  L.scrollTop=L.scrollHeight;if(chatOpen()){HSN.unread=0;updateChatBadge();}}
+function updateChatBadge(){const b=document.getElementById('btnSay');if(!b)return;let k=b.querySelector('.badge');const n=HSN.unread;
+  if(!n){if(k)k.remove();return;}if(!k){k=el('i',{class:'badge'});b.appendChild(k);}k.textContent=n>9?'9+':String(n);}
+/* a speech bubble that wraps: up to three lines of about 24 characters */
+function wrapChat(t,w,maxL){const words=Array.from(t).join('').split(' ');const L=[];let cur='';
+  for(let wd of words){while(Array.from(wd).length>w){const a=Array.from(wd);if(cur){L.push(cur);cur='';}L.push(a.slice(0,w).join(''));wd=a.slice(w).join('');}
+    const nx=cur?cur+' '+wd:wd;if(Array.from(nx).length>w){L.push(cur);cur=wd;}else cur=nx;}if(cur)L.push(cur);
+  if(L.length>maxL){L.length=maxL;L[maxL-1]=trunc(L[maxL-1]+'…',w);}return L;}
+function chatBubble(person,text){if(!person)return;const lines=wrapChat(text,24,3);if(lines.length<2){say(person,lines[0]||text,Math.min(8,3+text.length/16));return;}
+  const fs=54,lh=fs*1.18,pad=26;const c=document.createElement('canvas');const k0=c.getContext('2d');k0.font=fs+'px '+HAND;
+  const tw=Math.ceil(Math.max(...lines.map(l=>k0.measureText(l).width)));c.width=tw+pad*2+12;c.height=Math.round(lines.length*lh+pad*1.3+12);
+  const k=c.getContext('2d');const w=c.width-12,h=c.height-12,rr_=Math.min(h/2,44);
+  k.save();k.shadowColor='rgba(40,30,50,0.28)';k.shadowBlur=10;k.shadowOffsetY=3;k.fillStyle='#ffffff';k.beginPath();
+  k.moveTo(6+rr_,4);k.lineTo(6+w-rr_,4);k.quadraticCurveTo(6+w,4,6+w,4+rr_);k.lineTo(6+w,4+h-rr_);k.quadraticCurveTo(6+w,4+h,6+w-rr_,4+h);k.lineTo(6+rr_,4+h);k.quadraticCurveTo(6,4+h,6,4+h-rr_);k.lineTo(6,4+rr_);k.quadraticCurveTo(6,4,6+rr_,4);k.closePath();k.fill();k.restore();
+  k.font=fs+'px '+HAND;k.fillStyle='#3a3446';k.textBaseline='middle';k.textAlign='center';lines.forEach((l,i)=>k.fillText(l,c.width/2,4+pad*0.65+lh*(i+0.5)+3));
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,depthTest:false,fog:false}));sp.material.toneMapped=false;
+  const hh=0.0044*c.height;sp.userData={w:hh*c.width/c.height,h:hh,t:0};sp.center.set(0.5,Math.min(0.5,0.22/hh));sp.scale.set(0.001,0.001,1);sp.renderOrder=9;
+  dropBubble(person);person.root.add(sp);person.bubble=sp;person.bubbleT=Math.min(9,3+text.length/16);tickBubble(person,0);}
 
 /* ---------- UI pieces ---------- */
 function hsPick(ray){const L=[];HSN.rem.forEach(r=>{if(r.person.root.visible&&r.person.hit)L.push(r);});if(!L.length)return null;const hits=ray.intersectObjects(L.map(r=>r.person.hit),false);if(!hits.length)return null;return L.find(r=>r.person.hit===hits[0].object)||null;}
@@ -3539,9 +3641,18 @@ function openRemoteFor(r){closePanels();const body=el('div');body.appendChild(el
   if(r.online){for(const k of['vinka','prata','skamta','krama','bjud']){const d=PSOC[k];const why=d.min&&prel(r.uid)<d.min?'Kräver att ni är kompisar':null;c.appendChild(actBtn(d.n+' '+r.name,k==='bjud'?'till din hytt':k==='vinka'?'nu':Math.round(d.dur*2.5)+' s',why,()=>hsSocial(r,k)));}
     for(const g of GIFTS)if((ST.inv['g_'+g.id]||0)>0)c.appendChild(actBtn('Ge '+g.give+' till '+r.name,'present',null,()=>hsSocial(r,'present',g.id)));}
   else c.appendChild(el('p',{class:'small'},r.name+' är inte inloggad. Du kan hälsa på när '+r.name+' är ombord igen.'));
-  body.appendChild(c);showDialog(r.name,body,[['Stäng',null,'ghost']]);}
-function openSay(){if(!SHARED)return;closePanels();const body=el('div');const g=el('div',{class:'chips saygrid'});SAY_QUICK.forEach((t,i)=>g.appendChild(el('button',{type:'button',class:'chip'+(i>=18?' emo':''),onclick:()=>{closePanels();hsSay(i);}},t)));body.appendChild(g);
-  body.appendChild(el('p',{class:'muted small'},'Alla i närheten ser det du säger i en pratbubbla.'));showDialog('Säg något',body,[['Stäng',null,'ghost']]);}
+  body.appendChild(c);const muted=hsMuted().has(r.uid);
+  showDialog(r.name,body,[[muted?'Sluta tysta':'Tysta i chatten',()=>{hsSetMute(r.uid,!muted);toast(muted?'Du ser '+r.name+'s meddelanden igen.':'Du ser inte längre '+r.name+'s meddelanden.','info');renderChatLog();},'ghost'],['Stäng',null,'ghost']]);}
+function openSay(){if(!SHARED)return;closePanels();HSN.unread=0;updateChatBadge();const body=el('div',{class:'chatwrap'});
+  body.appendChild(el('div',{id:'chatlog',class:'chatlog','aria-live':'polite'}));
+  const off=!!HSN.chatOff;const inp=el('input',{type:'text',maxlength:'200',placeholder:off?'Fritextchatten slås på snart':'Skriv något…',class:'chatin','aria-label':'Meddelande',enterkeyhint:'send',autocomplete:'off',disabled:off});
+  const btn=el('button',{type:'button',class:'btn',disabled:off},'Skicka');
+  const send=async()=>{if(!hsCleanChat(inp.value))return;btn.disabled=true;const ok=await hsChatSend(inp.value);btn.disabled=false;if(ok)inp.value='';};
+  btn.addEventListener('click',send);inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send();}});
+  body.appendChild(el('div',{class:'chatrow'},inp,btn));
+  const g=el('div',{class:'chips saygrid'});SAY_QUICK.forEach((t,i)=>g.appendChild(el('button',{type:'button',class:'chip'+(i>=18?' emo':''),onclick:()=>hsChatSend(t)},t)));body.appendChild(g);
+  body.appendChild(el('p',{class:'muted small'},'Alla ombord kan läsa chatten och meddelanden sparas i tre dagar. Tryck på en spelare om du vill tysta hen.'));
+  showDialog('Chatt',body,[['Stäng',null,'ghost']]);renderChatLog();hsChatPull(false);}
 function hsCtx(x,z){const o=[];if(!SHARED)return o;HSN.rem.forEach(r=>{if(!r.online)return;const d=Math.hypot(r.x-x,r.z-z);if(d<2.2)o.push({d:d+0.1,ic:'hand',label:'Prata med '+r.name,fn:()=>hsSocial(r,'prata')});else if(d<9)o.push({d:d*0.3+1.5,ic:'hand',label:'Vinka till '+r.name,fn:()=>hsSocial(r,'vinka')});});return o;}
 function hsActPeople(host){if(!SHARED)return;const near=[];HSN.rem.forEach(r=>{if(Math.hypot(r.x-ME.x,r.z-ME.z)<9)near.push(r);});if(!near.length)return;const sec=el('section',{class:'grp'},el('h3',null,'Spelare här'));
   for(const r of near){const row=el('div',{class:'person'});row.appendChild(el('div',{class:'phead'},el('b',null,r.name),el('span',null,(r.online?'ombord':'utloggad')+' · '+prelLabel(r.uid))));const opts=el('div',{class:'chips'});
@@ -3552,11 +3663,14 @@ function hsFriends(h){if(!SHARED)return;const L=[];const on=new Set(HSN.peers.ma
   for(const p of HSN.peers)if(p.uid!==HSN.me.id&&!L.some(x=>x.id===p.uid))L.push({id:p.uid,name:p.name||'?',on:true,pub:p});
   L.sort((a,b)=>(b.on-a.on)||(prel(b.id)-prel(a.id)));h.appendChild(el('h3',null,'Spelare ('+L.filter(x=>x.on).length+' ombord)'));
   if(!L.length)h.appendChild(el('p',{class:'muted small'},'Inga andra spelare än. Dela länken till spelet så kan andra gå ombord.'));
-  for(const x of L){const r=HSN.rem.get(x.id);const where=x.on?(ZB[(HSN.peers.find(p=>p.uid===x.id)||{}).z]||{}).n||'ombord':(()=>{const R=routineAt(x.pub.home||'park',x.pub.job,ST.t);return({sleep:'sover',eat:'äter',work:'jobbar',home:'hemma'})[R.kind];})();
+  for(const x of L){const r=HSN.rem.get(x.id);const where=x.on?(ZB[(r||{}).zone]||{}).n||'ombord':(()=>{const R=routineAt(x.pub.home||'park',x.pub.job,ST.t);return({sleep:'sover',eat:'äter',work:'jobbar',home:'hemma'})[R.kind];})();
     h.appendChild(el('button',{type:'button',class:'card friend player'+(x.on?' on':''),onclick:()=>{closePanels();if(r){cancelAction(true);goTo(r.x,r.z+1.2,null,x.name);}}},el('div',null,el('b',null,x.name+(x.on?' ●':'')),el('span',{class:'muted small'},prelLabel(x.id)+' · '+(x.on?'ombord':'utloggad')+' · '+where+(x.pub.title?' · '+x.pub.title:''))),meter(prel(x.id),100,'best')));}
   h.appendChild(el('h3',null,'Invånare'));}
 function hsMer(h){if(!SHARED)return;const me=HSN.me;h.appendChild(el('h3',null,'Gemensamma skeppet'));
   h.appendChild(el('p',{class:'small'},'Klockan går för alla: en timme i verkligheten är ett dygn ombord. När du loggar ut lever '+ST.name+' vidare – sover, äter och jobbar – utan att hitta på något nytt.'));
+  const S=NETB.rt.stats?NETB.rt.stats():{};const st=HSN.conn?'Ansluten':'Återansluter…';
+  h.appendChild(el('div',{class:'card netcard'},el('b',null,'Anslutning: '+st),el('span',{class:'muted small'},
+    'Svarstid '+Math.round(HSN.rtt||0)+' ms · '+HSN.fps+' uppdateringar/s · rörelser in '+HSN.rateIn.toFixed(1)+'/s, ut '+HSN.rateOut.toFixed(1)+'/s'+(S.rejoins?' · återanslöt '+S.rejoins+' gånger':'')+(S.lastClose&&!HSN.conn?' · '+S.lastClose:''))));
   const code=HSID.code(me);const inp=el('input',{type:'text',readonly:true,value:code,class:'codebox','aria-label':'Flyttkod'});
   h.appendChild(el('div',{class:'card'},el('b',null,'Din flyttkod'),el('span',{class:'muted small'},'Med koden kan du spela samma figur på en annan enhet. Dela den inte med andra.'),inp,
     el('div',{class:'row'},el('button',{type:'button',class:'btn ghost',onclick:()=>{inp.select();try{navigator.clipboard.writeText(code).then(()=>toast('Flyttkoden är kopierad.','info'));}catch(e){document.execCommand&&document.execCommand('copy');}}},'Kopiera'),
@@ -3569,7 +3683,7 @@ async function hsStartCard(host){const card=el('div',{class:'slot shared'});host
   const t=st.t;s.textContent=st.players+' '+(st.players===1?'spelare':'spelare')+' · skeppstid '+fmtT(t)+' '+DAYS[Math.floor(t/1440)%7].toLowerCase();
   if(st.has){btns.appendChild(el('button',{type:'button',class:'btn',onclick:async e=>{e.target.disabled=true;startEl.hidden=true;try{if(!await hsBoard()){startEl.hidden=false;toast('Hittade ingen figur.');}}catch(err){startEl.hidden=false;e.target.disabled=false;$('#hsStat').textContent='Kunde inte gå ombord: '+(err.message||err);}}},'Gå ombord som '+(st.mine&&st.mine.name||'du')));}
   else btns.appendChild(el('button',{type:'button',class:'btn',onclick:()=>openCreate('hs')},'Skapa din figur'));
-  btns.appendChild(el('button',{type:'button',class:'btn ghost',onclick:()=>{const body=el('div');const inp=el('input',{type:'text',placeholder:'HSN-…',class:'codebox'});body.appendChild(el('p',{class:'small'},'Klistra in flyttkoden från din andra enhet.'));body.appendChild(inp);
+  btns.appendChild(el('button',{type:'button',class:'btn ghost',onclick:()=>{const body=el('div');const inp=el('input',{type:'text',placeholder:'HS-…',class:'codebox'});body.appendChild(el('p',{class:'small'},'Klistra in flyttkoden från din andra enhet.'));body.appendChild(inp);
     showDialog('Flytta hit en figur',body,[['Flytta hit',()=>{const v=HSID.parse(inp.value);if(!v){$('#hsStat').textContent='Flyttkoden stämmer inte. Kontrollera att du fick med hela koden.';return;}HSID.set(v);showStart();}],['Avbryt',null,'ghost']]);}},'Har du en flyttkod?'));}
 
 /* ================= UI ================= */
@@ -3594,7 +3708,7 @@ const speedBtns=[...document.querySelectorAll('#speeds button')];
 speedBtns.forEach(b=>b.addEventListener('click',()=>{const s=+b.dataset.sp;if(s===0){paused=!paused;}else{paused=false;ST.speed=s;}hudUpdate(true);}));
 function hudUpdate(){if(!ST)return;
   $('#clk').textContent=fmtT(ST.t);$('#day').textContent=compactHud.matches?DAYS[dayIdx()%7].slice(0,3):DAYS[dayIdx()%7];$('#dsub').textContent='Dag '+(dayIdx()+1)+' · Resans år '+shipYear()+' av 100';
-  $('#money').textContent=kr(ST.money);if(SHARED){const n=HSN.peers.filter(p=>p.uid!==HSN.me.id).length;$('#online').textContent=n?n+' till ombord':'ensam ombord';}$('#gp').textContent='★ '+ST.gp;
+  $('#money').textContent=kr(ST.money);if(SHARED){const n=HSN.peers.filter(p=>p.uid!==HSN.me.id).length;$('#online').textContent=!HSN.conn&&performance.now()-HSN.joinT>4000?'återansluter…':n?n+' till ombord':'ensam ombord';}$('#gp').textContent='★ '+ST.gp;
   for(const n of NEEDS){const v=ST.needs[n.k];const b=needBars[n.k];b.ring.style.strokeDashoffset=String(RC*(1-v/100));b.ring.style.stroke=v>55?'var(--mint)':v>28?'var(--sun)':'var(--coral)';b.w.classList.toggle('alert',v<18);}
   const fast=ME.action&&ME.action.fast>ST.speed&&!paused;
   speedBtns.forEach(b=>{const s=+b.dataset.sp;b.setAttribute('aria-pressed',s===0?String(paused):String(!paused&&ST.speed===s));});
@@ -3932,7 +4046,7 @@ async function boot(hot){
   if(hot&&hot.st&&hot.st.look){startEl.hidden=true;beginPlay(hot.st,false);}else showStart();
 }
 {const H=window.claude&&window.claude.hot;const run=d=>{boot(d||{});};if(H&&typeof H.ready==='function')H.ready(run);else run(H&&H.data);}
-window.__game={hs:{HSN,HSID,hsCreate,hsSync,hsStatus,openRemoteFor,openSay,hsDonate,hsVote,hsCut,get SHARED(){return SHARED;},sharedT,hsCatchup,routineAt,sharedFunZone,hsWeatherAt,hsSocial,hsSay,hsBoard,hsLeave,hsRefreshShip,SAYS,NETB},doSocial,socialReason,econ:{ECON,PROJ,PJ,HOME_UP,GIFTS,donate,startProject,buyHome,completeProj,cutRibbon,inaugurate,homeBuild,siteBuild,trophyList,trivsel,ribbonPos,giftScore,favGifts,econInvite,guestsFree,pStage,pStatus,socialFor,GIFT_SOC,PLATS,DYNS},errs:()=>ERRS,tick:dm=>{advanceTime(dm);decayNeeds(dm);if(ME.action)tickAction(dm);},saveNow,workAction,reason,get ST(){return ST;},ME,NPCS:()=>NPCS,doAction,AB,ZB,setWeather,openAct,openMenu,applyJob,findPath,goTo,beginPlay,defaultState,CAM,get mode(){return gameMode;},renderer,
+window.__game={hs:{HSN,HSID,hsCreate,hsSync,hsStatus,openRemoteFor,openSay,hsDonate,hsVote,hsCut,get SHARED(){return SHARED;},sharedT,hsCatchup,routineAt,sharedFunZone,hsWeatherAt,hsSocial,hsSay,hsBoard,hsLeave,hsRefreshShip,SAYS,NETB,hsChatSend,hsChatPull,hsMuted,hsSetMute,remSample,wrapChat},doSocial,socialReason,econ:{ECON,PROJ,PJ,HOME_UP,GIFTS,donate,startProject,buyHome,completeProj,cutRibbon,inaugurate,homeBuild,siteBuild,trophyList,trivsel,ribbonPos,giftScore,favGifts,econInvite,guestsFree,pStage,pStatus,socialFor,GIFT_SOC,PLATS,DYNS},errs:()=>ERRS,tick:dm=>{advanceTime(dm);decayNeeds(dm);if(ME.action)tickAction(dm);},saveNow,workAction,reason,get ST(){return ST;},ME,NPCS:()=>NPCS,doAction,AB,ZB,setWeather,openAct,openMenu,applyJob,findPath,goTo,beginPlay,defaultState,CAM,get mode(){return gameMode;},renderer,
   applyQuality,setPose:n=>{setPose(ME.person,n);},snapPose:()=>snapPose(ME.person),startMicro:id=>startMicro(ME.person,id),CRIT,PETS,get TT(){return TT;},scene,camera,updateCamera,setHour:h=>{ST.t=Math.floor(ST.t/1440)*1440+h*60;},POSES,makePerson,animPerson,PROF,sun,floor,hemi,ctx:()=>ctxOptions(),COURSE,SLIDE,renderFrame,eco:{STATUS,HORSES,hs,giveFx,hasFx,fxList,activeEvents,EVENTS,refreshReqs,REQ_T,emit,npcNeeds,ecoFunZone,startNpcMech,npcMechSpot,isEvent,coursePaid,reqProgress},RX,reactPulse,emote,startMicroP:(p,id)=>startMicro(p,id),npcState,critterSense:()=>critterSense(playerStim())};
 
 }catch(err){console.error(err);fail('Något gick fel: '+(err&&err.message));}
