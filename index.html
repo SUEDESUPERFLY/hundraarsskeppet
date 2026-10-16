@@ -3918,8 +3918,8 @@ async function hsStartCard(host){const card=el('div',{class:'slot shared'});host
    A Pokémon-style flash and wipe takes you from the riding hall into a pixel-art arena on the ship. Before each fence
    you pick a command – Samla, Framåt, Lugna or Klappa – and the fence type decides which one suits it (like types in a
    battle). Then you press HOPPA at the right moment, an action command like the timed hits in Paper Mario.
-   Faults follow show-jumping rules: a knock-down 4, a refusal 4, a second refusal eliminates, and every started second
-   over the time allowed costs 1. The horse's stamina and trust come from the life sim (energy, bond, hästgodis), and the
+   Faults follow show-jumping rules: a knock-down 4, a refusal 4, the third refusal eliminates (national rule for classes
+   under 1.20 m), and every started second over the time allowed costs 1 (FEI Table A since 2022). The horse's stamina and trust come from the life sim (energy, bond, hästgodis), and the
    result goes back into it: prize money, a rosette on the trophy shelf, bond, a higher class, and on the shared ship
    a best round that everyone aboard can see. */
 const JCLASS=[
@@ -4035,8 +4035,8 @@ function jResolve(){const M=JM.meter,f=M.f,F=JFENCE[f.k],C=JM.cmd;const q=M.hit|
   JM.log.push({fence:f.k,cmd:C.id,q,outcome});return{q,outcome};}
 function jAfter(r){const f=JM.course[JM.fi],F=JFENCE[f.k];const qt={perfect:'Perfekt avsprång!',good:'Bra avsprång.',early:'Lite för tidigt…',late:'Lite för sent…',wayearly:'Alldeles för tidigt!',miss:'Du hann inte trycka!'}[r.q];
   if(r.outcome==='refuse'){JM.refusals++;JM.refHere++;JM.faults+=4;JM.time+=6;JM.tru=clamp(JM.tru-12,0,100);jInfo();jHud();
-    if(JM.refusals>=2){JM.elim=true;jSay(qt+' '+JM.hn+' vägrade igen. Två vägringar betyder att ni är uteslutna. Det händer de bästa – nästa gång!',()=>jFinish());return;}
-    jSay(qt+' '+JM.hn+' tvärstannade framför hindret! Vägran ger 4 fel. Ni vänder och försöker igen.',()=>{JM.x=f.x-70;JM.cam=Math.max(0,JM.x-60);jNext();});return;}
+    if(JM.refusals>=3){JM.elim=true;jSay(qt+' '+JM.hn+' vägrade en tredje gång. Då blir man utesluten. Det händer de bästa – nästa gång!',()=>jFinish());return;}
+    jSay(qt+' '+JM.hn+(JM.refusals===1?' tvärstannade framför hindret! Vägran ger 4 fel. Ni vänder och försöker igen.':' vägrade igen – 4 fel till. En vägran till så blir ni uteslutna. Lugna eller Klappa kan hjälpa.'),()=>{JM.x=f.x-70;JM.cam=Math.max(0,JM.x-60);jNext();});return;}
   JM.sta=clamp(JM.sta-F.tire,0,100);JM.time+={perfect:-0.6,good:-0.2,early:0.4,late:0.4,wayearly:0.8,miss:0.8}[r.q]||0;
   if(r.q==='perfect')JM.tru=clamp(JM.tru+4,0,100);else if(r.q==='good')JM.tru=clamp(JM.tru+1,0,100);
   if(r.outcome==='knock'){JM.knocks++;JM.faults+=4;JM.tru=clamp(JM.tru-4,0,100);f.knocked=1;JM.rails.push({x:f.x+(JM.el?26:0),y:JGY-JM.cls.hp,vy:-30,r:0,vr:jr(-6,6),col:f.col,t:0});}
