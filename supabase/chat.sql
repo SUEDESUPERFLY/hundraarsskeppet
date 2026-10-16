@@ -9,7 +9,7 @@ language plpgsql security definer set search_path = public, extensions as $$
 declare b text; r record; nm text;
 begin
 perform hs_auth(p_id, p_secret);
-b := left(btrim(regexp_replace(regexp_replace(coalesce(p_body, ''), '[[:cntrl:]​-‏‪-‮⁦-⁩]', ' ', 'g'), '\s+', ' ', 'g')), 200);
+b := left(btrim(regexp_replace(regexp_replace(coalesce(p_body, ''), '[[:cntrl:]\u200b-\u200f\u202a-\u202e\u2066-\u2069]', ' ', 'g'), '\s+', ' ', 'g')), 200);
 if b = '' then raise exception 'empty'; end if;
 if (select count(*) from hs_chat where player = p_id and created_at > now() - interval '10 seconds') >= 6 then raise exception 'rate'; end if;
 select name into nm from hs_players where id = p_id;

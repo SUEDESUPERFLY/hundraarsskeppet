@@ -55,7 +55,7 @@ b := regexp_replace(b, '(^|[^a-zåäö])(cp|fan|helvete|skit)([^a-zåäö]|$)', 
 return b;
 end $$;
 create or replace function public.hs_clean(t text) returns text language sql immutable set search_path = '' as $$
-select left(btrim(regexp_replace(regexp_replace(public.hs_filter(coalesce(t, '')), '[[:cntrl:]​-‏‪-‮⁦-⁩]', ' ', 'g'), '\s+', ' ', 'g')), 200) $$;
+select left(btrim(regexp_replace(regexp_replace(public.hs_filter(coalesce(t, '')), '[[:cntrl:]\u200b-\u200f\u202a-\u202e\u2066-\u2069]', ' ', 'g'), '\s+', ' ', 'g')), 200) $$;
 
 -- boarding: new players wait until an adult lets them in
 create or replace function public.hs_register(p_id uuid, p_secret text, p_name text) returns jsonb language plpgsql security definer set search_path = public, extensions as $$
