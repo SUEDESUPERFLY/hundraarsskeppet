@@ -378,6 +378,14 @@ body.lowfx .glass{background:rgba(255,250,243,.94)}body.lowfx .panel,body.lowfx 
 @media (min-width:900px) and (max-aspect-ratio:13/10){.mini-ui{width:100%;max-width:720px;margin:0 auto}}
 @media (max-aspect-ratio:13/10){.mini.tbl .mini-stage{height:min(30vh,64vw)}}
 .mini-ui>*{flex-shrink:0}
+@media (max-aspect-ratio:13/10){.mini.big .mini-stage{height:min(57vh,118vw)}.mini.big.tbl .mini-stage{height:min(34vh,72vw)}}
+.mini-cmds.coins{grid-template-columns:repeat(5,1fr);gap:5px;padding:6px}.mini-cmds .mc.coin{min-height:44px;padding:6px 2px;border-radius:22px;background:linear-gradient(#f6d77a,#c9a227);color:#3a2a00}.mini-cmds .mc.coin b{font-size:14px}
+.mini-cmds .mc.coin.note{border-radius:6px;background:linear-gradient(#9fd39a,#4f9a54);color:#0d2b10}.mini-cmds .mc.coin.ghost{background:transparent;color:#fff;border-radius:7px}
+.mini-cmds.g4{grid-template-columns:repeat(4,1fr);gap:5px;padding:6px}.mini-cmds.g3{grid-template-columns:repeat(3,1fr);gap:5px;padding:6px}
+.mini-cmds.g6{grid-template-columns:repeat(6,1fr);gap:4px;padding:5px}.mini-cmds .mc.tiny{min-height:46px;padding:3px 1px;gap:1px}.mini-cmds .mc.tiny b{font-size:19px;line-height:1}.mini-cmds .mc.tiny small{font-size:9.5px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.mini-cmds.g4 .mc.small2,.mini-cmds.g3 .mc.small2{min-height:44px;padding:6px 3px}.mini-cmds.g4 .mc.small2 b,.mini-cmds.g3 .mc.small2 b{font-size:13px;line-height:1.15}
+.mini-cmds .mc.pad2{min-height:110px;touch-action:none}.mini-cmds .mc.pad2 b{font-size:40px}.mini-cmds .mc.bad{border-color:rgba(255,120,110,.6)}
+.jobmode-box{margin-top:8px;display:grid;gap:6px}.jobmode{display:flex;gap:6px}.jobmode .btn{flex:1}.jobmode .btn.on{box-shadow:0 0 0 3px #ffd34d inset}
 .mini-info[hidden],.mi-bar[hidden]{display:none}
 .mini-cmds.quad{grid-template-columns:repeat(4,1fr)}.mini-cmds.duo{grid-template-columns:1fr 1fr}
 .mini-cmds .mc.small2{align-items:center;justify-content:center;text-align:center;padding:12px 4px;min-height:50px}.mini-cmds .mc.small2 b{font-size:16px}
@@ -2914,6 +2922,7 @@ function trophyList(){if(!ST)return[];const T=[],P=ST.econ.proj;
   {const M=ST.mg||{};   /* the other minigames */
     if(M.golf){if(M.golf.hio)T.push({k:'star',c:GOLD,n:'Hole in one'+(M.golf.hio>1?' ×'+M.golf.hio:'')});if(M.golf.best!=null&&M.golf.best<=GPAR)T.push({k:'cup',c:0x3aa65a,n:'Rymdgolf '+(M.golf.best<GPAR?'under par':'på par')});}
     if(M.dans&&M.dans.grade)for(const s of DSONGS){const g=M.dans.grade[s.id];if(g==='S'||g==='A')T.push({k:'star',c:g==='S'?GOLD:0xc0c4cc,n:g+' i dans: '+s.n});}
+    if(ST.jobx){let n=0;for(const k in ST.jobx){const S=ST.jobx[k];const top=(S.stars||[]).lastIndexOf(3);if(top>=0&&CAREERS[k]&&n++<3)T.push({k:'star',c:GOLD,n:'★★★ som '+CAREERS[k].titles[top].toLowerCase()});}}
     if(M.mat&&M.mat.medal)for(const r of MREC){const m=M.mat.medal[r.id];if(m)T.push({k:'medal',c:{g:GOLD,s:0xc0c4cc,b:0xc9874a}[m],n:{g:'Guld',s:'Silver',b:'Brons'}[m]+' i köket: '+r.n});}}
   if(ST.goalDone){const g=GOALS.find(x=>x.id===ST.goal);T.push({k:'star',c:GOLD,n:'Livsmål'+(g?': '+g.n:'')});}
   for(const p of PROJ)if(P.open[p.id]&&((P.mine[p.id]||0)>0||(P.mineW[p.id]||0)>0||P.cut[p.id]))T.push({k:'plaque',c:0x8a6242,n:'Byggde '+p.def});
@@ -3964,7 +3973,7 @@ function jState(){return ST.hopp||(ST.hopp={lvl:1,best:{},wins:0,starts:0,ros:[]
 /* ---------- open and close (the encounter transition) ---------- */
 const MG={};   /* the other minigames register here (golf.js, dans.js, mat.js); each has open/frame/draw and optional input hooks */
 function jumpMini(mode,gid){if(JM.on||!ST)return;const G=gid?MG[gid]:null;if(gid&&!G)return;JM.on=true;JM.g=G;JM.gid=gid||'hopp';JM.mode=G?(mode||'play'):mode==='train'?'train':'contest';buildMiniDom();
-  JM.dom.root.setAttribute('aria-label',G?G.title:'Hopptävling');JM.dom.root.dataset.g=JM.gid;JM.dom.root.classList.remove('tbl');JM.dom.go.hidden=true;jCmds([]);jSay('');
+  JM.dom.root.setAttribute('aria-label',G?G.title:'Hopptävling');JM.dom.root.dataset.g=JM.gid;JM.dom.root.classList.remove('tbl','big');if(G&&G.big)JM.dom.root.classList.add('big');JM.dom.go.hidden=true;jCmds([]);jSay('');
   const c=jHorse();JM.horse=c;JM.course=[];JM.cls=null;JM.meter=null;JM.air=null;JM.parts=[];JM.rails=[];JM.x=40;JM.cam=0;JM.phase='intro0';JM.hn=c?c.name:'Hästen';JM.coat=c?(c.coat||0x8a5a35):0x8a5a35;
   JM.wasPaused=paused;if(!SHARED)paused=true;else hsLoadPlayers();JM.wasNoRender=!!window.__noRender;window.__miniOn=true;closePanels();
   const fx=JM.dom.fx;fx.hidden=false;fx.className='mini-fx flash';
@@ -3972,11 +3981,12 @@ function jumpMini(mode,gid){if(JM.on||!ST)return;const G=gid?MG[gid]:null;if(gid
   setTimeout(()=>{if(!JM.on)return;window.__noRender=true;JM.dom.root.hidden=false;JM.phase=G?'menu':'class';jResize();jBg();JM.last=performance.now();JM.raf=requestAnimationFrame(jFrame);if(G){jInfoSet('',null,[]);jHudSet('','','');jDotsSet([]);G.open(JM.mode);}else renderClassPick();},1250);
   setTimeout(()=>{fx.className='mini-fx open';},1350);setTimeout(()=>{fx.hidden=true;fx.className='mini-fx';},1900);}
 function jStopG(){const G=JM.g;JM.g=null;if(G&&G.stop)try{G.stop();}catch(e){}}
-function jForceClose(){/* leaving to the start screen mid-ride: just take the arena down */if(!JM.on)return;jStopG();cancelAnimationFrame(JM.raf);JM.on=false;JM.phase='off';window.__miniOn=false;window.__noRender=JM.wasNoRender;
+function jForceClose(){/* leaving to the start screen mid-ride: just take the arena down */if(!JM.on)return;if(JM.g&&JM.g.abort)try{JM.g.abort();}catch(e){}jStopG();cancelAnimationFrame(JM.raf);JM.on=false;JM.phase='off';window.__miniOn=false;window.__noRender=JM.wasNoRender;
   if(JM.dom){JM.dom.root.hidden=true;JM.dom.fx.hidden=true;JM.dom.fx.className='mini-fx';}}
 function closeMini(){if(!JM.on||JM.closing)return;JM.closing=true;const fx=JM.dom.fx;fx.hidden=false;fx.className='mini-fx fade';
-  setTimeout(()=>{JM.closing=false;jStopG();JM.dom.root.hidden=true;cancelAnimationFrame(JM.raf);JM.on=false;JM.phase='off';JM.dom.root.classList.remove('tbl');window.__miniOn=false;window.__noRender=JM.wasNoRender;if(!SHARED)paused=JM.wasPaused;
-    const A=ME.action;if(A&&(A.a.contest||A.a.mg)){A.mini=true;A.hold=false;try{tickAction(Math.max(0,A.dur-A.t));}catch(e){finishAction(true);}}requestSave(true);},420);
+  setTimeout(()=>{JM.closing=false;const G=JM.g;JM.dom.root.hidden=true;cancelAnimationFrame(JM.raf);JM.on=false;JM.phase='off';JM.dom.root.classList.remove('tbl','big');window.__miniOn=false;window.__noRender=JM.wasNoRender;if(!SHARED)paused=JM.wasPaused;
+    const A=ME.action;if(A&&(A.a.contest||A.a.mg)){A.mini=true;A.hold=false;try{tickAction(Math.max(0,A.dur-A.t));}catch(e){finishAction(true);}}
+    if(G&&G.after)try{G.after();}catch(e){console.error(e);}jStopG();requestSave(true);},420);
   setTimeout(()=>{fx.className='mini-fx';fx.hidden=true;},900);}
 
 /* ---------- DOM: the arena canvas, Pokémon-style status and text boxes, a Final Fantasy-style command window ---------- */
@@ -4221,8 +4231,10 @@ function jBoardG(get,mine,better){const L=[];if(mine!=null)L.push({n:ST.name,v:m
 function jBoardRows(L,fmt){const top=L.slice(0,3).map((r,i)=>({...r,pl:i+1}));const mi=L.findIndex(r=>r.me);if(mi>=3)top.push({...L[mi],pl:mi+1});return top.map(r=>({n:r.n,sub:'',a:fmt(r.v),b:'',me:r.me,pl:r.pl}));}
 function jEnd(head,toastKind,again){const T=JM.dom.cmds;const b=el('div',{class:'mt-btns'},jBtn('Klar','',()=>{closeMini();if(head)toast(head,toastKind||'info');}),again?jBtn(again.n,again.sub||'',again.fn,{cls:'ghost'}):null);T.appendChild(b);}
 function mgState(k,def){ST.mg=ST.mg||{};return ST.mg[k]||(ST.mg[k]=def);}
-function mgPub(){const M=ST&&ST.mg;if(!M)return null;const o={};
-  if(M.golf&&M.golf.best!=null)o.g=M.golf.best;if(M.dans&&M.dans.best)o.d=M.dans.best;if(M.mat&&M.mat.best)o.m=M.mat.best;return Object.keys(o).length?o:null;}
+function mgPub(){const M=(ST&&ST.mg)||{};const o={};
+  if(M.golf&&M.golf.best!=null)o.g=M.golf.best;if(M.dans&&M.dans.best)o.d=M.dans.best;if(M.mat&&M.mat.best)o.m=M.mat.best;
+  if(ST&&ST.jobx){const j={};for(const k in ST.jobx){const b=ST.jobx[k].best;if(b&&b.some(v=>v!=null))j[k]=b;}if(Object.keys(j).length)o.j=j;}   /* best shift score per career and level */
+  return Object.keys(o).length?o:null;}
 /* a seeded random so a course or a song chart is the same for everyone */
 function jRng(seed){let a=seed>>>0||1;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
 
@@ -4681,6 +4693,816 @@ const MK={st:null,title:'Köket',view:[128,104],   /* fewer, bigger pixels than 
     const bw=80,bx=cx-40,by=cy+32;x.fillStyle='rgba(0,0,0,.35)';x.fillRect(bx-1,by-1,bw+2,5);x.fillStyle='#ffd34d';x.fillRect(bx,by,Math.floor(bw*Math.min(1,s.t/s.dur)),3);}};
 MG.mat=MK;
 
+/* ================= JOBB: aktiva arbetspass =================
+   Every career can be worked passively, as before, or actively. An active shift is a short time-management game in three
+   waves – morning, rush, last hour – built on what makes Diner Dash and Cooking Dash work: customers with patience hearts,
+   a chain bonus for serving several in a row without mistakes, and a goal meter with a normal and an expert goal (here
+   1–3 stars). The level follows your job title, so every promotion adds new tasks. A daily event – the same for everyone
+   aboard – changes the conditions, so no two days are alike. One active shift per workday is paid (bonus and tips on top
+   of the wage, a big lift for the promotion meter); practice shifts from the job tab are free to replay at any level. */
+const JOBG={};
+const JOB_EV=[
+ {id:'vanlig',n:'En vanlig dag',d:'Inget särskilt händer idag.'},
+ {id:'rusning',n:'Rusningsdag',d:'Fler än vanligt kommer idag!',rate:1.3},
+ {id:'lugn',n:'Lugn dag',d:'Färre kommer, och alla har gott om tålamod.',rate:0.8,pat:1.25},
+ {id:'fest',n:'Festdag ombord',d:'Alla är på gott humör – dubbel dricks!',tip:2,pat:1.15},
+ {id:'chef',n:'Chefen är på besök',d:'Misstag kostar dubbelt, men ett felfritt pass ger 15 % extra.',strict:true},
+ {id:'vip',n:'VIP-besök',d:'En känd gäst kommer under rusningen. Ta väl hand om hen!',vip:true}];
+const JOB_STARMUL=[1,1.15,1.35,1.6],JOB_PERF=[5,15,30,50],JOB_XP=[2,4,7,10];
+function jobMode(){return ST&&ST.jobMode==='aktiv'?'aktiv':'passiv';}
+function jobState(id){ST.jobx=ST.jobx||{};return ST.jobx[id]||(ST.jobx[id]={best:[null,null,null,null,null],stars:[0,0,0,0,0],shifts:0,day:-1});}
+function jobEvent(cid,practice){const G=JOBG[cid];const L=JOB_EV.concat(G.events||[]);if(window.__jobEv){const e=L.find(x=>x.id===window.__jobEv);if(e)return e;}let h=0;for(const ch of cid)h=h*31+ch.charCodeAt(0);
+  const r=jRng(practice?Math.floor(Math.random()*1e9):hsHash(dayIdx(),h));return L[Math.floor(r()*L.length)];}
+function jobPaidToday(){return!!(ST.job&&jobState(ST.job.id).day===dayIdx());}
+
+/* ---------- drawing helpers shared by the job games ---------- */
+const JEMO={};
+function jEmo(x,ch,cx,cy,sz){const k=ch+'|'+sz;let c=JEMO[k];if(!c){c=document.createElement('canvas');const S=Math.ceil(sz*1.4);c.width=c.height=S;const g=c.getContext('2d');
+    g.font=sz+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(ch,S/2,S/2+sz*0.06);JEMO[k]=c;}
+  x.drawImage(c,Math.round(cx-c.width/2),Math.round(cy-c.height/2));}
+function jTxt(x,t,cx,cy,col,sz,al){x.font=(sz>=9?'bold ':'')+(sz||8)+'px "Pixelify Sans",monospace';x.textAlign=al||'center';x.textBaseline='alphabetic';x.fillStyle='rgba(0,0,0,.55)';x.fillText(t,cx+1,cy+1);x.fillStyle=col||'#fff';x.fillText(t,cx,cy);}
+function jHearts(x,cx,y,f){const n=5,on=Math.ceil(clamp(f,0,1)*n);const P=['.#.#.','#####','.###.','..#..'];const x0=Math.round(cx-n*3);
+  for(let i=0;i<n;i++)for(let r=0;r<4;r++)for(let c=0;c<5;c++)if(P[r][c]==='#'){x.fillStyle=i<on?(f>0.5?'#ff5b6b':f>0.25?'#ffb347':'#ff3b3b'):'rgba(0,0,0,.35)';x.fillRect(x0+i*6+c*1,y+r,1,1);}}
+/* a pixel person about 22 px tall standing with the feet at (cx,fy); o: {walk, mood, arm, hold} */
+function jPerson(x,cx,fy,L,o){o=o||{};L=L||{};const skin=L.skin||'#e8b892',hair=L.hair||'#5a3a22',shirt=L.shirt||'#3fa79c',pants=L.pants||'#3b4a66',shoes=L.shoes||'#2b2b33';
+  const R=(a,b,w,h,c)=>{x.fillStyle=c;x.fillRect(Math.round(cx+a),Math.round(fy+b),w,h);};const st=o.walk?(Math.floor(o.walk*6)%2):0;
+  R(-3,-7,2,6+(st?-1:0),pants);R(1,-7,2,6+(st?0:-1),pants);R(-3,-1-(st?1:0),3,1,shoes);R(1,-1-(st?0:1),3,1,shoes);
+  R(-4,-16,8,9,shirt);R(-3,-22,6,6,skin);R(-3,-23,6,2,hair);if(L.style==='lang'||L.style==='knut'||L.style==='flata'){R(-4,-22,1,5,hair);R(3,-22,1,5,hair);}if(L.style==='knut')R(-1,-25,2,2,hair);
+  R(-2,-20,1,1,'#222');R(1,-20,1,1,'#222');
+  if(o.mood==='happy'){R(-1,-18,2,1,'#7a2a2a');R(-2,-19,1,1,'#7a2a2a');R(1,-19,1,1,'#7a2a2a');}else if(o.mood==='sad'||o.mood==='angry'){R(-1,-18,2,1,'#7a2a2a');R(-2,-17,1,1,'#7a2a2a');R(1,-17,1,1,'#7a2a2a');if(o.mood==='angry'){R(-3,-21,2,1,'#222');R(1,-21,2,1,'#222');}}else R(-1,-18,2,1,'#9a5a4a');
+  if(o.arm==='up'){R(-6,-22,2,7,shirt);R(4,-16,2,7,shirt);R(-6,-23,2,1,skin);}else if(o.arm==='give'){R(4,-15,6,2,shirt);R(10,-15,2,2,skin);R(-6,-16,2,7,shirt);}else{R(-6,-16,2,7,shirt);R(4,-16,2,7,shirt);R(-6,-9,2,1,skin);R(4,-9,2,1,skin);}
+  if(o.vip){x.fillStyle='#ffd34d';x.fillRect(Math.round(cx-3),Math.round(fy-26),6,1);x.fillRect(Math.round(cx-3),Math.round(fy-28),1,2);x.fillRect(Math.round(cx),Math.round(fy-28),1,2);x.fillRect(Math.round(cx+2),Math.round(fy-28),1,2);}}
+function jBubble(x,cx,cy,w,h){x.fillStyle='#fff';x.fillRect(Math.round(cx-w/2),Math.round(cy-h/2),w,h);x.fillRect(Math.round(cx-1),Math.round(cy+h/2),3,2);x.fillStyle='rgba(0,0,0,.25)';x.fillRect(Math.round(cx-w/2),Math.round(cy+h/2),w,1);}
+/* little sounds through the dance synth's audio context (only when sound is on) */
+function jSfx(k){try{if(!dSoundOn())return;const c=dAudio();if(!c||c.state!=='running')return;const t=c.currentTime+0.01,M=DAU.master;
+  const tone=(f,d,type,v,f2)=>{const o=c.createOscillator(),g=c.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(v||0.08,t);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g).connect(M);o.start(t);o.stop(t+d+0.02);};
+  if(k==='pip')tone(1800,0.07,'square',0.05);else if(k==='ok'){tone(880,0.12,'triangle',0.12);setTimeout(()=>jSfx('ok2'),90);}else if(k==='ok2')tone(1320,0.15,'triangle',0.1);
+  else if(k==='bad')tone(180,0.22,'sawtooth',0.07,120);else if(k==='coin')tone(2400,0.05,'triangle',0.06);else if(k==='cash'){tone(1500,0.08,'square',0.05);setTimeout(()=>{try{jSfx('coin');}catch(e){}},70);}
+  else if(k==='pop')tone(600,0.08,'triangle',0.08,900);else if(k==='tick')tone(1000,0.03,'square',0.03);}catch(e){}}
+
+/* ---------- a shift: the context every job game works with ---------- */
+function jobCtx(cid,lvl,ev,practice){const G=JOBG[cid];return{cid,lvl,ev,practice,G,wave:0,t:0,len:G.waveLen||50,score:0,ws:[0,0,0],tips:0,miss:0,ok:0,lost:0,combo:0,maxc:0,fl:[],phase:'menu',
+  rng:jRng(Math.floor(Math.random()*1e9)),
+  add(p,x,y,label){p=Math.round(p);this.score+=p;this.ws[this.wave]+=p;if(x!=null)this.fl.push({x,y,t:0,txt:(label?label+' ':'')+(p>=0?'+':'')+p,col:p>=0?'#ffe066':'#ff7b7b'});},
+  chain(){this.combo++;this.maxc=Math.max(this.maxc,this.combo);return 1+Math.min(this.combo-1,10)*0.1;},
+  good(p,x,y,label){this.ok++;jSfx('ok');this.add(p,x,y,label);},
+  bad(p,x,y,label){this.miss++;this.combo=0;jSfx('bad');this.add(-Math.abs(p)*(this.ev.strict?2:1),x,y,label);},
+  lose(x,y){this.lost++;this.combo=0;jSfx('bad');this.add(-40*(this.ev.strict?2:1),x,y,'Gick');},
+  tip(kr,x,y){kr=Math.max(0,Math.round(kr*0.45*(this.ev.tip||1)));if(!kr)return;this.tips+=kr;jSfx('coin');if(x!=null)this.fl.push({x,y:y-8,t:0,txt:'+'+kr+' kr',col:'#8affa0'});},
+  rate(){return this.ev.rate||1;},pat(){return this.ev.pat||1;},
+  r(a,b){return a+this.rng()*(b-a);},ri(a,b){return Math.floor(this.r(a,b+1));},pick(L){return L[Math.floor(this.rng()*L.length)];},
+  float(txt,x,y,col){this.fl.push({x,y,t:0,txt,col:col||'#fff'});}};}
+
+const JB={st:null,title:'Jobbet',big:true,J:null,res:null,
+  get G(){return this.J&&this.J.G;},
+  open(mode){const cid=ST.job&&ST.job.id;if(!cid||!JOBG[cid]){setTimeout(closeMini,10);return;}this.res=null;this.mode=mode==='work'?'work':'practice';
+    const ev=jobEvent(cid,this.mode!=='work');this.J=jobCtx(cid,ST.job.lvl,ev,this.mode!=='work');this.paid=null;jResize();this.menu();},
+  menu(){const J=this.J,G=J.G,c=CAREERS[J.cid],S=jobState(J.cid);J.phase='menu';jGo('',false);jInfoSet('',null,[]);jDotsSet(['','','']);
+    jHudSet(c.n,G.name,'');const lv=ST.job.lvl;
+    const intro=(this.mode==='work'?'Dags att jobba som '+c.titles[lv].toLowerCase()+'! ':'Övningspass – ingen lön, men poängen räknas. ')+'Dagens händelse: '+J.ev.n+'. '+J.ev.d;
+    jSay(intro);
+    const B=[];if(this.mode==='work')B.push(jBtn('Börja passet',G.name+' · nivå '+(lv+1)+(S.best[lv]!=null?' · bäst '+S.best[lv]+' p':''),()=>this.begin(lv)));
+    else for(let l=0;l<=lv;l++)B.push(jBtn('Nivå '+(l+1)+' · '+c.titles[l],(S.best[l]!=null?'Bäst '+S.best[l]+' p '+'★'.repeat(S.stars[l]||0):G.lvlTxt?G.lvlTxt(l):'')+'',()=>this.begin(l)));
+    B.push(jBtn('Så funkar det','',()=>{jSay(G.help(J.lvl));},{cls:'ghost'}));
+    B.push(jBtn(this.mode==='work'?'Jobba passivt idag':'Tillbaka','',()=>closeMini(),{cls:'ghost'}));jCmds(B);},
+  begin(l){const J=this.J;J.lvl=l;J.score=0;J.ws=[0,0,0];J.tips=0;J.miss=0;J.ok=0;J.lost=0;J.combo=0;J.maxc=0;J.fl=[];
+    if(this.mode==='work'){const S=jobState(J.cid);if(S.day===dayIdx()&&!J.practice){J.practice=true;}else{S.day=dayIdx();}}
+    try{dAudio();}catch(e){}J.G.start(J);this.wave(0);},
+  wave(w){const J=this.J,G=J.G;J.wave=w;J.t=0;J.len=G.waveLen||50;J.phase='intro';jGo('',false);jCmds([]);G.wave(J,w);this.hud();
+    const names=G.waves||['Morgon','Rusning','Sista timmen'];jSay(names[w]+'! '+(G.waveTxt?G.waveTxt(J,w):''),()=>{J.phase='play';if(G.go1)G.go1(J);this.hud();});},
+  hud(){const J=this.J,G=J.G;const names=G.waves||['Morgon','Rusning','Sista timmen'];const left=Math.max(0,Math.ceil(J.len-J.t));
+    jHudSet(names[J.wave]+(J.phase==='play'?' · '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0'):''),J.combo>=2?'Kedja ×'+J.combo:'',J.score+' p');
+    jDotsSet([0,1,2].map(i=>i<J.wave?'ok':i===J.wave?'now':''));},
+  frame(dt){const J=this.J;if(!J)return;const G=J.G;dt*=(window.__jobTS||1);   /* tests may run the clock faster */for(const f of J.fl)f.t+=dt;J.fl=J.fl.filter(f=>f.t<1.1);
+    if(J.phase==='play'){J.t+=dt;G.frame(J,dt);if(Math.floor(J.t*2)!==Math.floor((J.t-dt)*2))this.hud();
+      if(J.t>=J.len){J.phase='after';jGo('',false);jCmds([]);const msg=G.waveEnd(J);const names=G.waves||['Morgon','Rusning','Sista timmen'];
+        jSay(names[J.wave]+' klar: '+J.ws[J.wave]+' poäng.'+(msg?' '+msg:''),()=>{if(J.wave<2)this.wave(J.wave+1);else this.finish();});this.hud();}}
+    else if(G.idle)G.idle(J,dt);},
+  draw(x){const J=this.J;if(!J)return;J.G.draw(J,x);x.setTransform(1,0,0,1,0,0);
+    for(const f of J.fl){const a=1-f.t/1.1;x.globalAlpha=Math.max(0,a);jTxt(x,f.txt,f.x,f.y-f.t*16,f.col,8);x.globalAlpha=1;}
+    if(J.phase!=='menu'&&J.phase!=='table'){/* the goal meter: 1, 2 and 3 stars */const T=J.G.target(J.lvl),W=JVW-24,y=13,f=clamp(J.score/T,0,1.05);
+      x.fillStyle='rgba(0,0,0,.45)';x.fillRect(11,y-1,W+2,5);x.fillStyle=f>=1?'#ffd34d':f>=0.7?'#8affa0':'#5bd1ff';x.fillRect(12,y,Math.round(W*Math.min(1,f)),3);
+      for(const m of [0.4,0.7,1]){const sx=12+Math.round(W*m)-2;const on=f>=m;x.fillStyle=on?'#ffd34d':'#7a7f9a';x.fillRect(sx+1,y-2,1,1);x.fillRect(sx,y-1,3,1);x.fillRect(sx-1,y,5,1);x.fillRect(sx,y+1,3,1);x.fillRect(sx,y+2,1,1);x.fillRect(sx+2,y+2,1,1);}}},
+  finish(){const J=this.J,G=J.G,c=CAREERS[J.cid],S=jobState(J.cid);J.phase='table';jGo('',false);
+    if(J.ev.strict&&!J.miss&&!J.lost){const b=Math.round(J.score*0.15);J.score+=b;J.float('Felfritt! +'+b,JVW/2,JVH/2,'#ffd34d');}
+    const T=G.target(J.lvl),sc=Math.max(0,J.score);const stars=sc>=T?3:sc>=0.7*T?2:sc>=0.4*T?1:0;
+    const rec=S.best[J.lvl]==null||sc>S.best[J.lvl];if(rec)S.best[J.lvl]=sc;S.stars[J.lvl]=Math.max(S.stars[J.lvl]||0,stars);S.shifts=(S.shifts||0)+1;
+    const paid=this.mode==='work'&&!J.practice;let bonus=0,tips=0,perf=0;
+    if(paid){const hrs=c.hours[1]-c.hours[0];bonus=Math.round(c.pay[ST.job.lvl]*hrs*(JOB_STARMUL[stars]-1));tips=J.tips;perf=JOB_PERF[stars];ST.job.perf=Math.min(100,ST.job.perf+perf);addXP(c.skill,JOB_XP[stars]);if(bonus+tips>0)earn(bonus+tips);}
+    else addXP(c.skill,1);
+    this.res={paid,bonus,tips,perf,stars,score:sc};if(paid)this.paid=this.res;
+    JM.dom.root.classList.add('tbl');jResize();
+    const st='★'.repeat(stars)+'☆'.repeat(3-stars);
+    jSay(st+' '+sc+' poäng'+(rec?' – nytt rekord!':'')+(paid?' Bonus '+bonus+' kr och '+tips+' kr i dricks.':J.practice&&this.mode==='work'?' Du har redan fått betalt för ett aktivt pass idag, så det här blev ett övningspass.':''));
+    const Tb=JM.dom.cmds;Tb.innerHTML='';Tb.className='mini-cmds table';
+    const rows=[0,1,2].map(i=>({n:(G.waves||['Morgon','Rusning','Sista timmen'])[i],a:J.ws[i]+' p',pl:i+1,cls:'pn'}));
+    rows.push({n:'Nöjda / missar',a:J.ok+' / '+(J.miss+J.lost),pl:'✓',cls:'pn'});
+    if(paid)rows.push({n:'Bonus + dricks',a:(bonus+tips)+' kr',b:'+'+perf+' prest.',pl:'kr',cls:'pn'});
+    rows.push({n:'Totalt',a:sc+' p',b:st,me:true,pl:'★',cls:'p'+(stars===3?1:stars===2?2:stars===1?3:0)});
+    Tb.appendChild(jTableBox(c.titles[J.lvl]+' · '+G.name,rows));
+    if(SHARED){const L=jBoardG(m=>m.j&&m.j[J.cid]&&m.j[J.cid][J.lvl],S.best[J.lvl],(a,b)=>b-a);if(L.length)Tb.appendChild(jTableBox('Bäst på skeppet · '+c.titles[J.lvl],jBoardRows(L,v=>v+' p')));}
+    Tb.appendChild(el('div',{class:'mt-btns'},jBtn('Klar','',()=>closeMini()),!paid?jBtn('Spela igen','Övningspass',()=>{JM.dom.root.classList.remove('tbl');jResize();this.mode='practice';this.J.practice=true;this.menu();},{cls:'ghost'}):null));
+    if(SHARED)requestSave(true);},
+  /* back in the world: release the work action; on a paid solo shift the rest of the workday passes (you were busy) */
+  after(){const R=this.paid,A=ME.action;if(A&&A.a.work){A.hold=false;A.jobmini=false;}
+    if(R){toast('Aktivt pass: '+'★'.repeat(R.stars)+'☆'.repeat(3-R.stars)+' · bonus '+R.bonus+' kr + '+R.tips+' kr dricks · prestation +'+R.perf+'.','money');
+      if(!SHARED&&A&&A.a.work){let g=0;while(ME.action===A&&A.t<A.dur-0.01&&g++<500){const s=Math.min(5,A.dur-A.t);advanceTime(s);decayNeeds(s);tickAction(s);}}}
+    else if(A&&A.a.work&&this.mode==='work')toast('Du jobbar passivt idag.','info');},
+  abort(){const A=ME.action;if(A&&A.a.work)A.hold=false;},
+  quit(){const J=this.J;if(J&&J.phase==='table'){closeMini();return;}if(J&&(J.phase==='play'||J.phase==='intro'||J.phase==='after')){J.phase='paused';jGo('',false);jSay('Vill du sluta mitt i passet? Då räknas poängen du har hittills.');
+      jCmds([jBtn('Fortsätt jobba','',()=>{J.phase='play';this.J.G.resume&&this.J.G.resume(J);jSay('');}),jBtn('Avsluta passet','',()=>this.finish(),{cls:'ghost'})]);return;}closeMini();},
+  stop(){const J=this.J;if(J&&J.G.stop)try{J.G.stop(J);}catch(e){}this.J=null;},
+  down(p,e){const J=this.J;if(J&&J.phase==='play'&&J.G.down)J.G.down(J,p,e);},move(p,e){const J=this.J;if(J&&J.phase==='play'&&J.G.move)J.G.move(J,p,e);},up(p,e){const J=this.J;if(J&&J.phase==='play'&&J.G.up)J.G.up(J,p,e);},
+  go(e){const J=this.J;if(J&&J.phase==='play'&&J.G.go)J.G.go(J,e);},goUp(e){const J=this.J;if(J&&J.phase==='play'&&J.G.goUp)J.G.goUp(J,e);},
+  key(e){const J=this.J;if(!J)return false;if(e.code==='Escape'){this.quit();return true;}if(J.phase==='play'&&J.G.key&&J.G.key(J,e))return true;if(JM.textCb&&(e.code==='Space'||e.code==='Enter')){jAdvance();return true;}return false;},
+  keyUp(e){const J=this.J;if(J&&J.phase==='play'&&J.G.keyUp)J.G.keyUp(J,e);},
+  resize(){const J=this.J;if(J&&J.G.resize)J.G.resize(J);},
+  get view(){const J=this.J;return(J&&J.G.view)||[184,150];}};
+MG.job=JB;
+
+/* starting work in active mode opens the shift game (the world waits in solo; on the shared ship the clock goes on) */
+on('begin',d=>{const a=d&&d.a;if(!a||!a.work||!ME.action||ME.action.a!==a||!ST.job||!JOBG[ST.job.id])return;if(d.zid)ST.jobAt=d.zid;   /* the shop you last worked in sets what the till sells */
+  if(jobMode()!=='aktiv')return;
+  if(jobPaidToday()){toast('Du har redan jobbat ett aktivt pass idag – resten av dagen jobbar du som vanligt. Öva gärna under Meny → Jobb.','info');return;}
+  if(!SHARED)ME.action.hold=true;ME.action.jobmini=true;setTimeout(()=>{if(ME.action&&ME.action.a===a)jumpMini('work','job');else if(ME.action)ME.action.hold=false;},350);});
+function jobPractice(){if(!ST.job||!JOBG[ST.job.id])return;closePanels();jumpMini('practice','job');}
+
+/* the job tab: passive or active, today's event, practice and records */
+function jobModeBox(j){const G=JOBG[j.id],S=jobState(j.id),act=jobMode()==='aktiv';const box=el('div',{class:'jobmode-box'});
+  const set=m=>{ST.jobMode=m;requestSave(true);renderMenu();toast(m==='aktiv'?'Aktivt arbete: nästa gång du jobbar spelar du '+G.name.toLowerCase()+'.':'Passivt arbete: du jobbar som vanligt.','info');};
+  box.appendChild(el('div',{class:'jobmode'},el('button',{type:'button',class:'btn'+(act?' ghost':' on'),onclick:()=>set('passiv')},'Passivt'),el('button',{type:'button',class:'btn'+(act?' on':' ghost'),onclick:()=>set('aktiv')},'Aktivt – '+G.name)));
+  const ev=jobEvent(j.id,false);
+  box.appendChild(el('p',{class:'muted small'},act?('Du spelar ett arbetspass i tre delar. Bra jobbat ger bonus, dricks och snabbare befordran. Ett betalt aktivt pass per arbetsdag'+(S.day===dayIdx()?' – det har du redan gjort idag.':'.')+' Dagens händelse: '+ev.n+'.'):'Du jobbar som vanligt och tiden går. Byt till aktivt om du vill spela jobbet.'));
+  const rec=S.best.map((b,i)=>b!=null&&i<=j.lvl?(i+1)+': '+b+' p '+'★'.repeat(S.stars[i]||0):null).filter(Boolean);
+  if(rec.length)box.appendChild(el('p',{class:'small'},'Rekord per nivå – '+rec.join(' · ')));
+  box.appendChild(el('button',{type:'button',class:'btn ghost',onclick:jobPractice},'Öva på jobbet'));return box;}
+
+/* ================= JOBB: Kassan – butiksbiträde =================
+   Customers queue at the till. Scan their things (tap them on the belt), take card or cash and give the right change
+   with coins and notes – real Swedish money: 1, 2, 5 and 10 kr coins and 20–500 kr notes. Every title adds a task:
+   questions from customers (prices are on the board, places in the shop), loose fruit to weigh or security tags to
+   remove, a 3-for-2 offer to spot, and returns under the 30-day rule. What is sold depends on the shop you work in. */
+const BSHOP={
+ food:{n:'Mat',wall:'#d9efd2',stripe:'#c4e2bb',items:[['🥛','Mjölk',15],['🍞','Bröd',25],['🧀','Ost',45],['🥚','Ägg',30],['🍫','Choklad',18],['🍝','Pasta',14],['🐟','Fisk',55],['🍦','Glass',35]],
+   prod:[['🍎','Äpplen',5],['🍌','Bananer',4],['🍐','Päron',6],['🥕','Morötter',10],['🥔','Potatis',12]],
+   where:[['Var hittar jag mjölken?','Kyldisken',['Brödhyllan','Frukt och grönt']],['Var finns bananerna?','Frukt och grönt',['Frysen','Kyldisken']],['Var hittar jag glassen?','Frysen',['Brödhyllan','Kyldisken']],['Var finns brödet?','Brödhyllan',['Frysen','Frukt och grönt']],['Var hittar jag osten?','Kyldisken',['Frysen','Brödhyllan']]]},
+ klader:{n:'Kläder',wall:'#f6dbe6',stripe:'#eccbd8',items:[['👕','T-shirt',99],['👖','Jeans',299],['👗','Klänning',249],['🧣','Halsduk',79],['🧢','Keps',129],['🧦','Strumpor',39],['👜','Väska',199],['🧥','Jacka',599]],
+   where:[['Har ni provrum?','Ja, längst in till höger',['Nej, tyvärr','Bara på helgen']],['Kan jag byta om den inte passar?','Ja, med kvittot inom 30 dagar',['Nej, aldrig','Bara om den är trasig']]]},
+ skor:{n:'Skor',wall:'#efe3cf',stripe:'#e3d4ba',items:[['👟','Gympaskor',499],['👞','Finskor',699],['👢','Stövlar',599],['🥿','Ballerinaskor',349],['🧦','Strumpor',39],['👠','Klackskor',549]],
+   where:[['Får jag prova skorna?','Ja, sätt dig på pallen',['Nej, inte här','Bara om du köper dem']],['Har ni skosnören?','Ja, vid kassan',['Nej, aldrig','I frysen']]]},
+ sport:{n:'Sport',wall:'#d6e6f6',stripe:'#c5d8ee',items:[['⚽','Fotboll',199],['🏀','Basketboll',249],['🎾','Tennisbollar',79],['🏓','Pingisrack',149],['🥤','Vattenflaska',59],['👟','Löparskor',799],['🛹','Skateboard',699]],
+   where:[['Vad behöver jag för att spela tennis?','Racket och tennisbollar',['En fotboll','Simfötter']],['Var kan jag spela basket ombord?','I idrottshallen',['I poolen','På bion']]]},
+ apotek:{n:'Apotek',wall:'#e3f3ea',stripe:'#d0eadc',items:[['🩹','Plåster',29],['💊','Vitaminer',89],['🧴','Solkräm',119],['🧼','Tvål',19],['🌡️','Termometer',99],['🍬','Halstabletter',35],['🧻','Näsdukar',25]],
+   where:[['Vad skyddar mot solbränna?','Solkräm',['Halstabletter','Termometer']],['Vad sätter man på ett skrubbsår?','Plåster',['Tvål','Vitaminer']],['Hur ser jag om jag har feber?','Med en termometer',['Med plåster','Med näsdukar']]]},
+ hast:{n:'Häst',wall:'#ecdcc8',stripe:'#e0ccb2',items:[['🥕','Hästgodis',39],['🍎','Äppelgodis',45],['⛑️','Ridhjälm',899],['🧤','Ridhandskar',199],['🧽','Borste',59],['🎀','Rosett',49],['🐎','Leksakshäst',149]],
+   where:[['Vad ska man ha på huvudet när man rider?','En ridhjälm',['En rosett','En keps']],['Vad tycker hästar om som godis?','Morötter och äpplen',['Choklad','Chips']]]}};
+const BZONE={mataffar:'food',gina:'klader',mango:'klader',skoteria:'skor',sport:'sport',apotek:'apotek',hooks:'hast'};
+const BCOINS=[1,2,5,10,20,50,100,200,500];
+function bShop(){const z=(ME.action&&ME.action.zid)||(ST.jobAt)||'mataffar';return BSHOP[BZONE[z]]||BSHOP.food;}
+
+JOBG.butik={name:'Kassan',view:[184,160],
+  lvlTxt:l=>['Scanna och ta betalt','+ frågor från kunderna','+ väga frukt och larmbrickor','+ 3 för 2-erbjudanden','+ öppet köp och stora köp'][l],
+  help:l=>'Tryck på varorna på bandet för att scanna dem. Betalar kunden kontant väljer du mynt och sedlar tills växeln stämmer och trycker GE VÄXEL. Betalar hen med kort trycker du KORT. Snabb service ger dricks, och flera nöjda kunder i rad ger kedjebonus.'+(l>=1?' Kunderna frågar ibland saker – priserna står på tavlan.':'')+(l>=2?' Lös frukt måste vägas, och larmbrickor (röd prick) tas bort innan du scannar.':'')+(l>=3?' Har kunden tre av kampanjvaran blir en gratis.':'')+(l>=4?' Öppet köp gäller i 30 dagar med kvitto.':''),
+  target:l=>[2200,2600,2800,3000,3400][l],
+  events:[{id:'rea',n:'Rea!',d:'Halva priset idag – många kunder och stora köp.',rate:1.25,big:true}],
+  start(J){const S=J.s={shop:bShop(),q:[],cur:null,spawnT:0,anim:0,board:[],camp:null};const sh=S.shop;
+    S.board=J.pick([0,1])?sh.items.slice(0,4):sh.items.slice(-4);if(J.lvl>=3){S.camp=J.pick(sh.items.filter(i=>i[2]<100));}},
+  wave(J,w){const S=J.s;S.q=[];S.cur=null;S.spawnT=0.5;S.waveIv=[8,5.5,7][w]*(1-0.05*J.lvl)/J.rate();S.vipDone=w!==1;},
+  waveTxt(J,w){return['Butiken öppnar. Kunderna börjar komma.','Nu kommer rusningen – håll kön kort!','Sista timmen. Ge allt!'][w];},
+  /* ---- customers ---- */
+  spawn(J){const S=J.s;const pool=NPCS.filter(n=>n.look);const n=J.pick(pool);const vip=J.ev.vip&&!S.vipDone&&J.wave===1&&J.t>12;if(vip)S.vipDone=true;
+    const P=(46-J.lvl*2.5)*J.pat()*(vip?0.75:1);S.q.push({name:vip?'Kapten '+n.name:n.name,look:n.look,pat:P,P,x:-12,y:0,vip,walk:0});},
+  makeOrder(J,c){const S=J.s,sh=S.shop,L=J.lvl;const big=J.ev.big;const nmax=[2,3,4,5,5][L]+(big?1:0),nmin=[1,1,2,2,3][L];let n=J.ri(nmin,nmax);
+    const items=[];if(L>=4&&J.rng()<0.2){c.ret={it:J.pick(sh.items),days:J.ri(3,45),kvitto:J.rng()<0.75};return;}
+    if(S.camp&&J.rng()<0.35){const k=J.rng()<0.6?3:2;for(let i=0;i<k;i++)items.push(S.camp);n=Math.max(0,n-k);}
+    for(let i=0;i<n;i++){if(L>=2&&sh.prod&&J.rng()<0.35)items.push(J.pick(sh.prod).concat(['prod']));else items.push(J.pick(sh.items));}
+    c.items=items.map((it,i)=>({e:it[0],n:it[1],p:big?Math.max(1,Math.round(it[2]/2)):it[2],prod:it[3]==='prod',tag:L>=2&&!sh.prod&&J.rng()<0.4,x:0,tx:0,st:'belt',i}));
+    c.total=0;c.scanned=0;c.campDone=false;
+    if(L>=1&&J.rng()<0.4){if(sh.where&&J.rng()<0.5){const w=J.pick(sh.where);c.ask={q:w[0],a:w[1],opts:J.rng()<0.5?[w[1]].concat(w[2]):w[2].concat([w[1]])};}
+      else{const it=J.pick(S.board);const wrong=[it[2]+J.pick([10,20,5]),Math.max(1,it[2]-J.pick([10,5,4]))];const o=[String(it[2]),String(wrong[0]),String(wrong[1])].map(v=>v+' kr');c.ask={q:'Vad kostar '+it[1].toLowerCase()+'?',a:it[2]+' kr',opts:J.rng()<0.5?o:o.reverse()};}}},
+  next(J){const S=J.s;if(S.cur||!S.q.length)return;const c=S.q.shift();S.cur=c;c.st='walk';c.t=0;this.makeOrder(J,c);
+    if(c.ret){jSay(c.name+': Hej! Jag vill lämna tillbaka '+c.ret.it[1].toLowerCase()+'. Jag köpte den för '+c.ret.days+' dagar sedan'+(c.ret.kvitto?' – här är kvittot.':', men jag har tappat kvittot.'));}
+    else jSay(c.name+(c.vip?' (VIP)':'')+': Hej!'+(c.items.length>2?' Det blev en del idag.':''));},
+  geo(){const W=JVW,H=JVH;const yC=Math.round(H*0.66);return{W,H,yC,belt0:Math.round(W*0.38),belt1:Math.round(W*0.72),scan:Math.round(W*0.76),reg:Math.round(W*0.84),bag:Math.round(W*0.93),cx:Math.round(W*0.26),fy:Math.round(H*0.9)};},
+  frame(J,dt){const S=J.s,g=this.geo();S.anim+=dt;
+    S.spawnT-=dt;if(S.spawnT<=0&&S.q.length<4){this.spawn(J);S.spawnT=S.waveIv*J.r(0.75,1.25);}
+    S.q.forEach((c,i)=>{const tx=Math.max(6,g.cx-26-i*13),ty=g.fy-8-i*7;c.x+=(tx-c.x)*Math.min(1,dt*3);c.y+=(ty-c.y)*Math.min(1,dt*3);c.walk+=dt*(Math.abs(tx-c.x)>1?1:0);c.pat-=dt;});
+    for(let i=S.q.length-1;i>=0;i--){const c=S.q[i];if(c.pat<=0){S.q.splice(i,1);J.lose(c.x,c.y-30);jSay(c.name+' tröttnade på att vänta och gick.');}}
+    if(!S.cur)this.next(J);const c=S.cur;if(!c)return;c.t+=dt;
+    if(c.st==='walk'){c.x+=(g.cx-c.x)*Math.min(1,dt*4);c.y+=(g.fy-c.y)*Math.min(1,dt*4);c.walk+=dt;if(c.t>0.7){c.x=g.cx;c.y=g.fy;if(c.ret){c.st='ret';this.cmdRet(J);}else{c.st='scan';c.items.forEach((it,i)=>{it.x=g.belt0-10-i*4;it.tx=g.belt0+6+i*14;});this.cmdScan(J);}}}
+    else if(c.st!=='leave'){c.pat-=dt*0.55;if(c.pat<=0){J.lose(g.cx,g.fy-30);jSay(c.name+' blev för otålig och gick därifrån.');this.leave(J,'angry');return;}}
+    if(c.items)for(const it of c.items){if(it.st==='belt')it.x+=(it.tx-it.x)*Math.min(1,dt*5);else if(it.st==='bag'){it.x+=(g.bag-it.x)*Math.min(1,dt*8);}}
+    if(c.st==='leave'){c.x-=dt*40;c.walk+=dt;if(c.t>1.2)S.cur=null;}
+    if(S.cur&&S.cur.st==='leave'&&S.cur.t>1.2)S.cur=null;},
+  leave(J,mood){const c=J.s.cur;c.st='leave';c.t=0;c.mood=mood;jGo('',false);jCmds([]);},
+  served(J,c){const f=clamp(c.pat/c.P,0,1);J.good(20+Math.round(f*40),this.geo().cx,this.geo().fy-34,'Nöjd');J.tip((1+f*5)*(c.vip?3:1),this.geo().cx,this.geo().fy-30);this.leave(J,'happy');},
+  /* ---- the till ---- */
+  cmdScan(J){const c=J.s.cur;jGo('',false);jCmds([]);if(c.items.length)jSay(c.name+' lägger upp '+c.items.length+(c.items.length===1?' vara':' varor')+'. Tryck på varorna för att scanna dem.'+(c.items.some(i=>i.tag)?' Ta bort larmbrickan först (den röda pricken)!':''));},
+  down(J,p){const S=J.s,c=S.cur,g=this.geo();if(!c||c.st!=='scan')return;
+    for(const it of c.items){if(it.st!=='belt')continue;const ix=it.x,iy=g.yC-8;
+      if(it.tag&&Math.hypot(p.x-(ix+6),p.y-(iy-6))<5){it.tag=false;J.add(5,ix,iy-10);jSfx('pop');return;}
+      if(Math.abs(p.x-ix)<8&&Math.abs(p.y-iy)<9){this.scanItem(J,it);return;}}},
+  scanItem(J,it){const c=J.s.cur,g=this.geo();if(it.tag){J.bad(15,it.x,g.yC-20,'Larm!');jSay('PIIIP! Larmet tjuter – ta bort larmbrickan först.');return;}
+    if(it.prod){c.weigh=it;const sh=J.s.shop;const opts=[it].concat(sh.prod.filter(p=>p[1]!==it.n).sort(()=>J.rng()-0.5).slice(0,3).map(p=>({e:p[0],n:p[1],p:p[2]}))).sort(()=>J.rng()-0.5);
+      jSay('Lös frukt ska vägas. Vilken vara är det?');jCmds(opts.map(o=>jBtn(o.e+' '+o.n,'',()=>{c.weigh=null;jCmds([]);if(o.n===it.n){J.add(15,it.x,g.yC-20,'Rätt');this.doScan(J,it);}else{J.bad(20,it.x,g.yC-20,'Fel vara');jSay('Oj, det var inte '+o.n.toLowerCase()+'. Försök igen!');this.cmdScan(J);}},{cls:'small2'})));JM.dom.cmds.classList.add('quad');return;}
+    this.doScan(J,it);},
+  doScan(J,it){const c=J.s.cur,g=this.geo();it.st='bag';c.total+=it.p;c.scanned++;jSfx('pip');J.add(10,g.scan,g.yC-22);
+    if(c.scanned>=c.items.length){if(!c.weigh)jCmds([]);setTimeout(()=>{if(J.s&&J.s.cur===c&&J.phase==='play')this.afterScan(J);},250);}},
+  afterScan(J){const S=J.s,c=S.cur;const nc=S.camp?c.items.filter(i=>i.n===S.camp[1]).length:0;
+    if(S.camp&&nc>=2&&!c.campDone){c.campDone=true;jSay('Kampanj: 3 för 2 på '+S.camp[1].toLowerCase()+'. Ska kunden få rabatt?');
+      jCmds([jBtn('Ja, 3 för 2','',()=>{if(nc>=3){c.total-=c.items.find(i=>i.n===S.camp[1]).p;J.good(40,this.geo().reg,this.geo().yC-30,'Kampanj');}else J.bad(25,this.geo().reg,this.geo().yC-30,'Bara '+nc+' st');this.afterScan(J);}),
+        jBtn('Nej','',()=>{if(nc>=3){c.total-=c.items.find(i=>i.n===S.camp[1]).p;J.bad(30,this.geo().reg,this.geo().yC-30,'Missad rabatt');jSay(c.name+': Men det var ju 3 för 2! Jag fick rabatten nu.');setTimeout(()=>{if(J.s&&J.s.cur===c)this.afterScan(J);},900);return;}J.add(20,this.geo().reg,this.geo().yC-30,'Rätt');this.afterScan(J);})]);return;}
+    if(c.ask&&!c.asked){c.asked=true;jSay(c.name+': '+c.ask.q);jCmds(c.ask.opts.map(o=>jBtn(o,'',()=>{if(o===c.ask.a){J.good(30,this.geo().cx,this.geo().fy-36,'Rätt svar');}else{J.bad(20,this.geo().cx,this.geo().fy-36,'Fel svar');jSay('Rätt svar: '+c.ask.a+'.');}setTimeout(()=>{if(J.s&&J.s.cur===c)this.pay(J);},o===c.ask.a?200:900);})));return;}
+    this.pay(J);},
+  pay(J){const c=J.s.cur;if(!c||c.st==='leave')return;c.st='pay';const cash=c.total<=300?J.rng()<0.65:J.rng()<0.3;
+    if(!cash){c.cash=0;jSay(c.name+': Jag betalar med kort. Summa '+c.total+' kr.');jCmds([]);jGo('KORT',true);return;}
+    const notes=J.lvl===0?[20,50,100]:[20,50,100,200,500,1000];let give=notes.find(v=>v>=c.total)||Math.ceil(c.total/500)*500;if(J.lvl>=1&&J.rng()<0.15)give=c.total;
+    c.cash=give;c.change=give-c.total;c.giv=[];jSay(c.name+': Varsågod, '+give+' kr. (Summa '+c.total+' kr – växel '+(J.lvl>=3?'?':c.change+' kr')+')');this.coins(J);jGo('GE VÄXEL',true);},
+  coins(J){const c=J.s.cur;jCmds(BCOINS.filter(v=>v<Math.max(2,c.change+1)||v<=10).map(v=>jBtn(v+' kr','',()=>{c.giv.push(v);jSfx('coin');},{cls:'small2 coin'+(v>=20?' note':'')})).concat([jBtn('Ångra','',()=>{c.giv=[];},{cls:'small2 ghost'})]));JM.dom.cmds.classList.add('coins');},
+  go(J){const c=J.s.cur,g=this.geo();if(!c||c.st!=='pay')return;
+    if(!c.cash){jSfx('cash');const m=J.chain();J.good(25*m,g.reg,g.yC-30,'Kort');this.served(J,c);return;}
+    const sum=c.giv.reduce((a,b)=>a+b,0);
+    if(sum===c.change){jSfx('cash');const m=J.chain();J.good(50*m+Math.min(20,c.change),g.reg,g.yC-30,c.change?'Rätt växel':'Jämnt');this.served(J,c);}
+    else{J.bad(40,g.reg,g.yC-30,'Fel växel');jSay('Det blev '+sum+' kr men växeln skulle vara '+c.change+' kr. '+c.name+' räknar om och får rätt pengar.');c.pat*=0.6;c.giv=[];setTimeout(()=>{if(J.s&&J.s.cur===c){this.leave(J,'sad');}},1200);jGo('',false);jCmds([]);}},
+  cmdRet(J){const c=J.s.cur,ok=c.ret.days<=30&&c.ret.kvitto;
+    jCmds([jBtn('Pengar tillbaka','',()=>{if(ok){J.good(60*J.chain(),this.geo().cx,this.geo().fy-36,'Rätt');this.served(J,c);}else{J.bad(40,this.geo().cx,this.geo().fy-36,'Fel');jSay('Öppet köp gäller bara i 30 dagar och med kvitto.');this.leave(J,'happy');}}),
+      jBtn('Tyvärr, det går inte','',()=>{if(!ok){J.good(50,this.geo().cx,this.geo().fy-36,'Rätt');jSay(c.name+': Okej, jag förstår.');this.leave(J,'sad');J.combo++;}else{J.bad(40,this.geo().cx,this.geo().fy-36,'Fel');jSay('Det var inom 30 dagar och med kvitto – kunden hade rätt.');this.leave(J,'angry');}})]);},
+  waveEnd(J){const S=J.s;const left=S.q.length+(S.cur?1:0);S.q=[];if(S.cur)S.cur=null;return left?'Butiken stänger för en stund – '+left+' kunder får komma tillbaka senare.':'';},
+  key(J,e){const c=J.s.cur;if(!c)return false;if(c.st==='scan'&&e.code==='Space'){const it=c.items.find(i=>i.st==='belt');if(it){if(it.tag){it.tag=false;jSfx('pop');}else this.scanItem(J,it);}return true;}
+    if(c.st==='pay'&&(e.code==='Enter'||e.code==='Space')){this.go(J);return true;}const d=['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9'].indexOf(e.code);if(c.st==='pay'&&c.cash&&d>=0){c.giv.push(BCOINS[d]);jSfx('coin');return true;}return false;},
+  /* ---- drawing ---- */
+  draw(J,x){const S=J.s,g=this.geo(),W=g.W,H=g.H;const sh=(S&&S.shop)||bShop();
+    x.fillStyle=sh.wall;x.fillRect(0,0,W,H);for(let i=0;i<W;i+=10){x.fillStyle=sh.stripe;x.fillRect(i,0,5,Math.round(H*0.5));}
+    const fy0=Math.round(H*0.5);x.fillStyle='#cfc6b8';x.fillRect(0,fy0,W,H-fy0);for(let i=0;i<W;i+=16)for(let j=fy0;j<H;j+=8){x.fillStyle=((i/16+j/8)%2)?'#c6bcac':'#d6cdc0';x.fillRect(i,j,16,8);}
+    /* shelves with goods along the back wall */
+    const shelfY=[30,48];for(const sy of shelfY){x.fillStyle='#8a6242';x.fillRect(Math.round(W*0.4),sy,Math.round(W*0.58),2);sh.items.forEach((it,i)=>{const ix=Math.round(W*0.43+i*((W*0.54)/sh.items.length));jEmo(x,it[0],ix,sy-5,9);});}
+    /* the price board */
+    x.fillStyle='#2c3e2f';x.fillRect(4,20,Math.round(W*0.34),52);x.fillStyle='#6b4a2b';x.fillRect(3,19,Math.round(W*0.34)+2,1);x.fillRect(3,72,Math.round(W*0.34)+2,1);
+    jTxt(x,'PRISER',4+Math.round(W*0.17),29,'#ffe066',7);(S?S.board:sh.items.slice(0,4)).forEach((it,i)=>{jEmo(x,it[0],12,38+i*10,8);jTxt(x,(J.ev.big?Math.max(1,Math.round(it[2]/2)):it[2])+' kr',Math.round(W*0.34)-1,41+i*10,'#ffffff',7,'right');});
+    if(S&&S.camp){x.fillStyle='#e0473c';x.fillRect(Math.round(W*0.4),54,46,14);jTxt(x,'3 för 2',Math.round(W*0.4)+16,64,'#fff',7);jEmo(x,S.camp[0],Math.round(W*0.4)+38,61,8);}
+    if(J.lvl>=4){const sx=Math.round(W*0.4)+52;x.fillStyle='#fff';x.fillRect(sx,52,40,18);x.fillStyle='#2c48c9';x.fillRect(sx,52,40,2);jTxt(x,'Öppet köp',sx+20,61,'#2c48c9',6);jTxt(x,'30 dagar',sx+20,68,'#2c48c9',6);}
+    if(!S)return;
+    /* queue */
+    for(let i=S.q.length-1;i>=0;i--){const c=S.q[i];jPerson(x,c.x,c.y,c.look,{walk:c.walk,vip:c.vip,mood:c.pat/c.P<0.3?'sad':null});jHearts(x,c.x,Math.round(c.y-31),c.pat/c.P);}
+    /* cashier (you) behind the till */
+    jPerson(x,g.reg+6,g.yC+4,ST.look,{arm:S.cur&&S.cur.st==='pay'?'give':null});
+    /* counter, belt, scanner, display */
+    x.fillStyle='#5b6274';x.fillRect(g.belt0-6,g.yC,W-g.belt0+6,Math.round(H*0.14));x.fillStyle='#727a8f';x.fillRect(g.belt0-6,g.yC,W-g.belt0+6,2);
+    x.fillStyle='#2b2e38';x.fillRect(g.belt0,g.yC-3,g.belt1-g.belt0,3);const o=Math.floor(S.anim*20)%6;for(let i=g.belt0+o;i<g.belt1;i+=6){x.fillStyle='#3d414e';x.fillRect(i,g.yC-3,2,3);}
+    x.fillStyle='#c33';x.fillRect(g.scan-3,g.yC-4,7,2);x.fillStyle='rgba(255,60,60,.4)';x.fillRect(g.scan-3,g.yC-14,7,10);
+    x.fillStyle='#1c1d26';x.fillRect(g.reg-16,g.yC-32,28,13);x.fillStyle='#103a1d';x.fillRect(g.reg-15,g.yC-31,26,11);
+    const c=S.cur;const disp=c&&c.st==='pay'&&c.cash?('V '+c.giv.reduce((a,b)=>a+b,0)):(c&&c.total!=null?c.total+'':'0');jTxt(x,disp+' kr',g.reg-2,g.yC-22,'#5dff8a',7);x.fillStyle='#444';x.fillRect(g.reg-4,g.yC-19,4,19);
+    x.fillStyle='#e9e2d0';x.fillRect(g.bag-8,g.yC-12,16,12);x.fillStyle='#d1c7ad';x.fillRect(g.bag-8,g.yC-12,16,2);
+    /* the customer and the goods */
+    if(c){jPerson(x,c.x,c.y,c.look,{walk:c.st==='walk'||c.st==='leave'?c.walk:0,vip:c.vip,mood:c.mood||(c.pat/c.P<0.3?'sad':null),arm:c.st==='pay'&&c.cash?'give':null});if(c.st!=='leave')jHearts(x,c.x,Math.round(c.y-31),c.pat/c.P);
+      if(c.st==='pay'&&c.cash){x.fillStyle=c.cash>=100?'#4a8fd8':'#5cb85c';x.fillRect(Math.round(c.x+10),Math.round(c.y-17),10,5);jTxt(x,String(c.cash),Math.round(c.x+15),Math.round(c.y-19),'#fff',6);}
+      if(c.st==='pay'&&!c.cash)jEmo(x,'💳',Math.round(c.x+13),Math.round(c.y-15),8);
+      if(c.ret)jEmo(x,c.ret.it[0],Math.round(c.x+13),Math.round(c.y-15),9);
+      if(c.items)for(const it of c.items){if(it.st==='belt'){jEmo(x,it.e,it.x,g.yC-8,12);if(it.prod){x.fillStyle='#fff';x.fillRect(Math.round(it.x)-6,g.yC-1,12,1);}if(it.tag){x.fillStyle='#e0302a';x.fillRect(Math.round(it.x)+4,g.yC-16,4,4);x.fillStyle='#fff';x.fillRect(Math.round(it.x)+5,g.yC-15,1,1);}}
+        else if(Math.abs(it.x-g.bag)>2)jEmo(x,it.e,it.x,g.yC-14,9);}}}};
+
+/* ================= JOBB: Köksrusning – kock =================
+   Orders arrive as tickets. Take ingredients from the pantry: some go on the stove (they cook, are ready – green – and
+   then burn if you wait too long), some are chopped on the board (tap until done), some go straight on the plate.
+   Tap a ready pan to move it to the chosen plate, then SERVERA when the plate matches an order. As a dishwasher you
+   also keep the plates clean; later titles bring more dishes, the oven, three burners, and orders like "utan sylt". */
+const KING={
+ brod:{e:'🍞',n:'Bröd',k:'raw'},ost:{e:'🧀',n:'Ost',k:'raw'},sylt:{e:'🍓',n:'Sylt',k:'raw'},lingon:{e:'🍒',n:'Lingon',k:'raw'},citron:{e:'🍋',n:'Citron',k:'raw'},
+ smet:{e:'🥛',n:'Smet',k:'stove',ct:5,done:'🥞'},kott:{e:'🧆',n:'Köttbullar',k:'stove',ct:7,done:'🧆'},potatis:{e:'🥔',n:'Potatis',k:'stove',ct:8,done:'🥔'},
+ gryta:{e:'🥣',n:'Soppbas',k:'stove',ct:9,done:'🍲'},fisk:{e:'🐟',n:'Fisk',k:'stove',ct:6,done:'🐟'},burgare:{e:'🥩',n:'Burgare',k:'stove',ct:6,done:'🍖'},
+ sallad:{e:'🥬',n:'Sallad',k:'chop',n2:4},tomat:{e:'🍅',n:'Tomat',k:'chop',n2:3},morot:{e:'🥕',n:'Morot',k:'chop',n2:3},
+ botten:{e:'🥯',n:'Pizzabotten',k:'oven',ct:8,done:'🍕'}};
+const KREC=[
+ {id:'smorgas',e:'🥪',n:'Smörgås',c:['brod','ost'],lv:0,pts:40},
+ {id:'pannkaka',e:'🥞',n:'Pannkakor',c:['smet','sylt'],lv:1,pts:60,utan:'sylt'},
+ {id:'sallad',e:'🥗',n:'Sallad',c:['sallad','tomat'],lv:1,pts:60,utan:'tomat'},
+ {id:'kottbullar',e:'🧆',n:'Köttbullar',c:['kott','potatis','lingon'],lv:2,pts:90,utan:'lingon'},
+ {id:'soppa',e:'🍲',n:'Soppa',c:['gryta','morot'],lv:2,pts:80},
+ {id:'pizza',e:'🍕',n:'Pizza',c:['botten','tomat','ost'],lv:3,pts:100,utan:'ost'},
+ {id:'fisk',e:'🐟',n:'Fisk med potatis',c:['fisk','potatis','citron'],lv:3,pts:100,utan:'citron'},
+ {id:'burgare',e:'🍔',n:'Hamburgare',c:['brod','burgare','sallad','tomat'],lv:4,pts:130,utan:'tomat'}];
+JOBG.kock={name:'Köksrusning',view:[184,160],waves:['Lunch','Eftermiddag','Middagsrusning'],
+  lvlTxt:l=>['Smörgåsar och disk','+ spisen: pannkakor och sallad','+ köttbullar och soppa','+ ugnen, pizza och fisk','+ hamburgare och specialbeställningar'][l],
+  help:l=>'Beställningarna kommer överst. Tryck på en råvara nere: den hamnar på spisen, på skärbrädan eller direkt på tallriken. På spisen blir maten klar (grön ring) – tryck på pannan för att lägga den på tallriken innan den bränns. Skärbrädan: tryck tills det är hackat. När tallriken stämmer trycker du SERVERA.'+(l===0?' Som diskare måste du också diska: tryck på de smutsiga tallrikarna i diskhon.':'')+(l>=4?' Ibland vill gästen ha något "utan" – lägg inte på det!':''),
+  target:l=>[1900,2100,2200,2300,2400][l],
+  events:[{id:'pannkaksdag',n:'Pannkaksdag',d:'Nästan alla vill ha pannkakor idag!',fav:'pannkaka'}],
+  start(J){const L=J.lvl;J.s={tickets:[],pans:Array.from({length:L===0?0:L>=3?3:2},()=>null),oven:L>=3?{it:null}:null,board:null,plates:Array.from({length:L===0?1:L>=3?3:2},()=>[]),sel:0,
+    sink:L===0?[2,3]:null,clean:L===0?2:99,spawnT:0,anim:0,recs:KREC.filter(r=>r.lv<=L&&(L===0||r.id!=='smorgas'||L<2))};},
+  wave(J,w){const S=J.s;S.tickets=[];S.spawnT=0.3;S.iv=[10,7,8][w]*(1-0.04*J.lvl)/J.rate();S.vipDone=w!==1;this.pantry(J);},
+  waveTxt(J,w){return['Gästerna börjar komma till lunch.','Eftermiddagen – det tar sig!','Middagsrusning! Snabba händer nu.'][w];},
+  pantry(J){const S=J.s;const need=new Set();for(const r of S.recs)for(const c of r.c)need.add(c);const order=['brod','ost','smet','sylt','sallad','tomat','kott','potatis','lingon','gryta','morot','botten','fisk','citron','burgare'];
+    const L=order.filter(k=>need.has(k));const many=L.length>7;jCmds(L.map(k=>{const I=KING[k];return many?jBtn(I.e,I.n,()=>this.take(J,k),{cls:'small2 ing tiny'}):jBtn(I.e+' '+I.n,'',()=>this.take(J,k),{cls:'small2 ing'});}).concat([jBtn('🗑',many?'Släng':'Släng tallriken',()=>this.trash(J),{cls:'small2 ghost'+(many?' tiny':'')})]));JM.dom.cmds.classList.add(many?'g6':'g4');jGo('SERVERA',true);},
+  spawn(J){const S=J.s;if(S.tickets.length>=4)return;let r=J.pick(S.recs);if(J.ev.fav&&J.rng()<0.6)r=S.recs.find(x=>x.id===J.ev.fav)||r;
+    const vip=J.ev.vip&&!S.vipDone&&J.wave===1&&J.t>12;if(vip)S.vipDone=true;const utan=J.lvl>=4&&r.utan&&J.rng()<0.3?r.utan:null;
+    const P=(48-J.lvl*2)*J.pat()*(vip?0.75:1)+r.c.length*4;S.tickets.push({r,utan,pat:P,P,vip,id:Math.random()});jSfx('tick');},
+  geo(){const W=JVW,H=JVH;return{W,H,tY:20,tH:34,stoveY:Math.round(H*0.47),boardX:Math.round(W*0.78),plY:Math.round(H*0.82)};},
+  panX(i,n){const W=JVW;const w=Math.round(W*0.62);return Math.round(8+w*(i+0.5)/n);},
+  plateX(i,n){const W=JVW;return Math.round(W*(i+0.5)/n);},
+  frame(J,dt){const S=J.s;S.anim+=dt;S.spawnT-=dt;if(S.spawnT<=0){this.spawn(J);S.spawnT=S.iv*J.r(0.8,1.2);}
+    for(let i=S.tickets.length-1;i>=0;i--){const t=S.tickets[i];t.pat-=dt;if(t.pat<=0){S.tickets.splice(i,1);J.lose(20+i*40,30);jSay('En gäst tröttnade på att vänta.');}}
+    const burnT=[0,6,5,4,4][J.lvl];
+    for(const p of S.pans.concat(S.oven?[S.oven.it]:[])){if(!p)continue;p.t+=dt;const I=KING[p.k];if(!p.burnt&&p.t>I.ct+burnT){p.burnt=true;J.bad(10,0,0);jSay('Oj! '+I.n+' blev bränd. Tryck på pannan för att slänga.');}}
+    if(S.sink){S.dirtyT=(S.dirtyT||6)-dt;if(S.dirtyT<=0){S.dirtyT=6/J.rate();S.sink.push(3);if(S.sink.length>6){S.sink.splice(0,2);J.bad(20,30,60,'Disken');jSay('Diskhon svämmar över! Diska oftare.');}}}},
+  take(J,k){const S=J.s,I=KING[k],g=this.geo();if(J.phase!=='play')return;
+    if(I.k==='raw'){this.toPlate(J,k);return;}
+    if(I.k==='stove'){const i=S.pans.indexOf(null);if(i<0){jSay('Spisen är full – vänta tills något är klart.');jSfx('bad');return;}S.pans[i]={k,t:0};jSfx('pop');return;}
+    if(I.k==='oven'){if(!S.oven||S.oven.it){jSay('Ugnen är upptagen.');jSfx('bad');return;}S.oven.it={k,t:0};jSfx('pop');return;}
+    if(I.k==='chop'){if(S.board){jSay('Skärbrädan är upptagen – hacka klart först.');jSfx('bad');return;}S.board={k,n:0,N:I.n2};jSay('Tryck på skärbrädan för att hacka '+I.n.toLowerCase()+'!');jSfx('pop');}},
+  toPlate(J,k){const S=J.s,g=this.geo();const pl=S.plates[S.sel];if(S.sink&&S.clean<=0&&!pl.length){jSay('Inga rena tallrikar – diska i diskhon!');jSfx('bad');return false;}
+    if(S.sink&&!pl.length)S.clean--;if(pl.length>=4){jSay('Tallriken är full.');return false;}pl.push(k);jSfx('pop');return true;},
+  trash(J){const S=J.s;const pl=S.plates[S.sel];if(!pl.length)return;S.plates[S.sel]=[];J.add(-5,this.plateX(S.sel,S.plates.length),this.geo().plY-14);if(S.sink)S.clean++;jSay('Tallriken tömdes.');},
+  match(t,pl){const need=t.r.c.filter(c=>c!==t.utan).slice().sort().join(',');return need===pl.slice().sort().join(',');},
+  serve(J,ti){const S=J.s,g=this.geo();const pl=S.plates[S.sel];if(!pl.length){jSay('Tallriken är tom. Välj en tallrik med mat.');return;}
+    let i=ti!=null?ti:S.tickets.findIndex(t=>this.match(t,pl));if(i<0||!S.tickets[i]){J.bad(20,this.plateX(S.sel,S.plates.length),g.plY-16,'Fel');jSay('Det finns ingen beställning som stämmer med tallriken. Titta på lapparna överst!');return;}
+    const t=S.tickets[i];if(!this.match(t,pl)){J.bad(20,20+i*40,40,'Fel rätt');jSay('Det där var inte '+t.r.n.toLowerCase()+(t.utan?' utan '+KING[t.utan].n.toLowerCase():'')+'.');return;}
+    S.tickets.splice(i,1);S.plates[S.sel]=[];const f=clamp(t.pat/t.P,0,1);const m=J.chain();J.good((t.r.pts+Math.round(f*40))*m,20+i*40,44,t.r.n);J.tip((2+f*6)*(t.vip?3:1),20+i*40,40);
+    if(S.sink)S.sink.push(3);jSay(J.pick(['Mums, tack!','Vad gott!','Precis vad jag ville ha!','Tack, kocken!']));},
+  go(J){this.serve(J,null);},
+  down(J,p){const S=J.s,g=this.geo();
+    if(p.y>=g.tY&&p.y<=g.tY+g.tH){const i=Math.floor((p.x-4)/((JVW-8)/4));if(S.tickets[i]){this.serve(J,i);}return;}
+    for(let i=0;i<S.pans.length;i++){const px=this.panX(i,S.pans.length);if(Math.hypot(p.x-px,p.y-g.stoveY)<12){this.pan(J,i);return;}}
+    if(S.oven){const ox=Math.round(JVW*0.78),oy=g.stoveY-2;if(Math.abs(p.x-ox)<16&&Math.abs(p.y-oy)<14&&S.oven.it){this.ovenTap(J);return;}}
+    const bx=S.oven?Math.round(JVW*0.78):g.boardX,by=S.oven?g.stoveY+24:g.stoveY;if(S.board&&Math.abs(p.x-bx)<18&&Math.abs(p.y-by)<12){this.chop(J);return;}
+    if(S.sink){const sx=Math.round(JVW*0.78),sy=g.stoveY;if(Math.abs(p.x-sx)<20&&Math.abs(p.y-sy)<16&&S.sink.length){this.scrub(J);return;}}
+    for(let i=0;i<S.plates.length;i++){const qx=this.plateX(i,S.plates.length);if(Math.abs(p.x-qx)<18&&Math.abs(p.y-g.plY)<12){S.sel=i;jSfx('tick');return;}}},
+  pan(J,i){const S=J.s,p=S.pans[i];if(!p)return;const I=KING[p.k];if(p.burnt){S.pans[i]=null;jSay('Slängde det brända.');return;}
+    if(p.t<I.ct){jSay(I.n+' är inte klar än.');return;}if(this.toPlate(J,p.k)){S.pans[i]=null;const g=this.geo();J.add(10,this.panX(i,S.pans.length),g.stoveY-12,p.t<I.ct+1.5?'Perfekt':'');}},
+  ovenTap(J){const S=J.s,p=S.oven.it;const I=KING[p.k];if(p.burnt){S.oven.it=null;jSay('Slängde den brända pizzan.');return;}if(p.t<I.ct){jSay('Pizzan är inte klar än.');return;}if(this.toPlate(J,p.k)){S.oven.it=null;J.add(10,Math.round(JVW*0.78),this.geo().stoveY-16);}},
+  chop(J){const S=J.s,b=S.board;b.n++;jSfx('tick');if(b.n>=b.N){if(this.toPlate(J,b.k)){S.board=null;J.add(8,Math.round(JVW*0.78),this.geo().stoveY);}else b.n=b.N-1;}},
+  scrub(J){const S=J.s;S.sink[0]--;jSfx('tick');if(S.sink[0]<=0){S.sink.shift();S.clean++;J.add(5,Math.round(JVW*0.78),this.geo().stoveY-14,'Ren');}},
+  waveEnd(J){const S=J.s;const n=S.tickets.length;S.tickets=[];S.pans=S.pans.map(()=>null);if(S.oven)S.oven.it=null;S.board=null;S.plates=S.plates.map(()=>[]);return n?n+' beställningar hann inte bli klara, men gästerna kommer tillbaka senare.':'';},
+  key(J,e){const S=J.s;const d=['Digit1','Digit2','Digit3'].indexOf(e.code);if(d>=0&&d<S.plates.length){S.sel=d;return true;}if(e.code==='Enter'){this.serve(J,null);return true;}
+    if(e.code==='Space'){if(S.board)this.chop(J);else if(S.sink&&S.sink.length)this.scrub(J);else{const i=S.pans.findIndex(p=>p&&(p.burnt||p.t>=KING[p.k].ct));if(i>=0)this.pan(J,i);}return true;}return false;},
+  /* ---- drawing ---- */
+  draw(J,x){const S=J.s,g=this.geo(),W=g.W,H=g.H;x.fillStyle='#dfe4ec';x.fillRect(0,0,W,H);for(let i=0;i<W;i+=12)for(let j=0;j<Math.round(H*0.6);j+=12){x.fillStyle=((i+j)/12)%2?'#d3d9e3':'#e6eaf1';x.fillRect(i,j,12,12);}
+    x.fillStyle='#9aa3b5';x.fillRect(0,g.tY-3,W,2);
+    const yc=Math.round(H*0.6);x.fillStyle='#7d8597';x.fillRect(0,yc,W,H-yc);x.fillStyle='#aab1c2';x.fillRect(0,yc,W,3);x.fillStyle='#6a7284';for(let i=8;i<W;i+=32)x.fillRect(i,yc+10,20,1);
+    if(!S)return;
+    /* tickets */
+    const tw=Math.floor((W-8)/4);S.tickets.forEach((t,i)=>{const tx=4+i*tw;x.fillStyle=t.vip?'#fff3b0':'#fffdf4';x.fillRect(tx+1,g.tY,tw-2,g.tH);x.fillStyle='rgba(0,0,0,.15)';x.fillRect(tx+1,g.tY+g.tH,tw-2,1);
+      x.fillStyle='#c33';x.fillRect(tx+Math.round(tw/2)-1,g.tY-2,2,3);jEmo(x,t.r.e,tx+10,g.tY+10,10);
+      t.r.c.forEach((c,j)=>{const ux=tx+tw-8-(t.r.c.length-1-j)*9;jEmo(x,KING[c].done||KING[c].e,ux,g.tY+10,7);if(c===t.utan){x.strokeStyle='#e0302a';x.lineWidth=1.2;x.beginPath();x.moveTo(ux-4,g.tY+6);x.lineTo(ux+4,g.tY+14);x.stroke();}});
+      jTxt(x,t.r.n.length>11?t.r.n.slice(0,10)+'.':t.r.n,tx+Math.round(tw/2),g.tY+24,'#333',6);const f=clamp(t.pat/t.P,0,1);x.fillStyle='#ddd';x.fillRect(tx+4,g.tY+g.tH-5,tw-8,2);x.fillStyle=f>0.5?'#3fd06b':f>0.25?'#f0b52a':'#e0473c';x.fillRect(tx+4,g.tY+g.tH-5,Math.round((tw-8)*f),2);
+      if(t.vip)jTxt(x,'VIP',tx+tw-8,g.tY+g.tH-7,'#c98b00',5);});
+    /* stove with pans */
+    const n=S.pans.length;if(n){x.fillStyle='#2b2e38';x.fillRect(6,g.stoveY-14,Math.round(W*0.62)+4,30);x.fillStyle='#3a3f4c';x.fillRect(6,g.stoveY+12,Math.round(W*0.62)+4,4);
+      for(let i=0;i<n;i++){const px=this.panX(i,n),p=S.pans[i];x.fillStyle=p?'#ff6a2a':'#55596a';x.fillRect(px-9,g.stoveY+8,18,2);x.fillStyle='#16181f';x.beginPath();x.ellipse(px,g.stoveY+2,11,6,0,0,7);x.fill();x.fillRect(px+10,g.stoveY,9,2);
+        if(p){const I=KING[p.k];const ready=p.t>=I.ct;jEmo(x,p.burnt?'🔥':ready?I.done:I.e,px,g.stoveY,11);const k=clamp(p.t/I.ct,0,1);
+          x.strokeStyle=p.burnt?'#333':ready?(p.t>I.ct+[0,6,5,4,4][J.lvl]-2&&Math.floor(S.anim*6)%2?'#e0473c':'#3fd06b'):'#ffd34d';x.lineWidth=2;x.beginPath();x.arc(px,g.stoveY,13,-Math.PI/2,-Math.PI/2+Math.PI*2*(ready?1:k));x.stroke();
+          if(p.burnt)for(let s=0;s<3;s++){x.fillStyle='rgba(60,60,60,.5)';x.fillRect(px-4+s*4,Math.round(g.stoveY-16-((S.anim*10+s*4)%10)),3,3);}}}}
+    /* right column: oven / board / sink */
+    const rx=Math.round(W*0.78);
+    if(S.oven){x.fillStyle='#4a4f5e';x.fillRect(rx-18,g.stoveY-16,36,26);x.fillStyle='#22252e';x.fillRect(rx-14,g.stoveY-12,28,16);const it=S.oven.it;if(it){x.fillStyle='rgba(255,120,40,.4)';x.fillRect(rx-14,g.stoveY-12,28,16);const I=KING[it.k];const ready=it.t>=I.ct;
+        jEmo(x,it.burnt?'🔥':ready?I.done:(I.e),rx,g.stoveY-4,10);x.fillStyle=ready?'#3fd06b':'#ffd34d';x.fillRect(rx-14,g.stoveY+6,Math.round(28*clamp(it.t/I.ct,0,1)),2);}}
+    const by=S.oven?g.stoveY+24:g.stoveY;if(!S.sink){x.fillStyle='#d9a066';x.fillRect(rx-18,by-7,36,14);x.fillStyle='#c48a52';x.fillRect(rx-18,by+6,36,2);
+      if(S.board){const I=KING[S.board.k];jEmo(x,I.e,rx-4,by-1,11);for(let i=0;i<S.board.n;i++){x.fillStyle='rgba(255,255,255,.7)';x.fillRect(rx+4+i*3,by-5,1,9);}jTxt(x,S.board.n+'/'+S.board.N,rx+12,by-9,'#333',6);x.fillStyle='#e9edf5';x.fillRect(rx+8,by-16+(Math.floor(S.anim*8)%2)*3,2,9);}}
+    if(S.sink){x.fillStyle='#9aa3b5';x.fillRect(rx-22,g.stoveY-10,44,22);x.fillStyle='#5b8cff';x.fillRect(rx-20,g.stoveY-8,40,18);S.sink.forEach((d,i)=>{x.fillStyle='#f6f6f2';x.beginPath();x.ellipse(rx-12+i*5,g.stoveY+2-i*1.5,7,3,0,0,7);x.fill();x.fillStyle='#8a6a3a';x.fillRect(rx-15+i*5,g.stoveY+1-i*1.5,2+d,1);});
+      jTxt(x,'Rena: '+S.clean,rx,g.stoveY+22,'#333',6);}
+    /* plates */
+    S.plates.forEach((pl,i)=>{const qx=this.plateX(i,S.plates.length);if(i===S.sel){x.fillStyle='#ffd34d';x.beginPath();x.ellipse(qx,g.plY,22,8,0,0,7);x.fill();}x.fillStyle='#f6f6f2';x.beginPath();x.ellipse(qx,g.plY,19,6.5,0,0,7);x.fill();x.fillStyle='#e3e3dc';x.beginPath();x.ellipse(qx,g.plY,12,4,0,0,7);x.fill();
+      pl.forEach((k,j)=>jEmo(x,KING[k].done||KING[k].e,qx-((pl.length-1)*5)+j*10,g.plY-3,9));jTxt(x,String(i+1),qx-22,g.plY+3,'#fff',6);});
+    /* the chef: you, in a white hat */
+    jPerson(x,W-12,Math.round(H*0.62),Object.assign({},ST.look,{shirt:'#ffffff'}),{});x.fillStyle='#fff';x.fillRect(W-16,Math.round(H*0.62)-28,8,5);}};
+
+/* ================= JOBB: Pumprummet – vattentekniker =================
+   A pipe puzzle in the spirit of Pipe Mania: lead the water from the pump to the ship's taps before the pressure gets
+   too high. Tap a pipe to turn it. Each puzzle is generated as a real path (so it can always be solved) and then
+   scrambled; the rest of the grid is decoy pipes. Higher titles add clogged filters to clean, leaks to patch (pick the
+   tool first), a second tap to reach, and bigger rooms. Solving several in a row builds the chain bonus. */
+const PIPED=[[0,-1],[1,0],[0,1],[-1,0]];   /* N E S W as bits 1 2 4 8 */
+const pipeRot=m=>((m<<1)|(m>>3))&15;
+JOBG.vatten={name:'Pumprummet',view:[184,160],
+  lvlTxt:l=>['Vrid rören rätt','+ större rum','+ igensatta filter','+ läckor att laga','+ två kranar och högt tryck'][l],
+  help:l=>'Vatten kommer från pumpen till vänster och ska fram till kranen till höger. Tryck på ett rör för att vrida det. När alla rör hänger ihop flödar vattnet och du får poäng – snabbare ger mer. Hinner trycket bli för högt spricker röret.'+(l>=2?' Bruna filter är igensatta: välj 🧽 Rengör och tryck på dem.':'')+(l>=3?' Droppande rör läcker: välj 🔧 Laga och tryck på dem.':''),
+  target:l=>[2600,2000,1800,1600,1200][l],
+  events:[{id:'tryck',n:'Högtryck',d:'Trycket stiger snabbare idag – men varje lösning ger mer.',fast:true}],
+  start(J){J.s={tool:'rot',anim:0,P:null,flow:0,solved:0};},
+  wave(J,w){this.newPuzzle(J);this.tools(J);},
+  waveTxt(J,w){return['Morgonens första vattenleverans.','Alla duschar på morgonen – det är rusning i rören!','Sista timmen – fyll vattentankarna.'][w];},
+  tools(J){const S=J.s;if(J.lvl<2){jCmds([]);jSay('Tryck på rören för att vrida dem.');return;}
+    const T=[['rot','🔄 Vrid'],['clean','🧽 Rengör']].concat(J.lvl>=3?[['fix','🔧 Laga']]:[]);
+    jCmds(T.map(([k,n])=>jBtn(n,S.tool===k?'vald':'',()=>{S.tool=k;this.tools(J);},{cls:'small2'+(S.tool===k?' good':'')})));JM.dom.cmds.classList.add(T.length===3?'g3':'duo');},
+  /* ---- puzzle generation: a random self-avoiding path from the pump to the tap(s) ---- */
+  newPuzzle(J){const L=J.lvl;const cols=[5,6,6,7,7][L],rows=[4,5,5,5,6][L];const two=L>=4;
+    for(let tries=0;tries<200;tries++){const g=Array.from({length:rows},()=>Array(cols).fill(0));const sr=J.ri(0,rows-1),er=J.ri(0,rows-1);
+      const path=this.walk(J,cols,rows,[0,sr],[cols-1,er],new Set());if(!path)continue;
+      const link=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1];const d=PIPED.findIndex(v=>v[0]===dx&&v[1]===dy);g[a[1]][a[0]]|=1<<d;g[b[1]][b[0]]|=1<<((d+2)%4);};
+      for(let i=0;i<path.length-1;i++)link(path[i],path[i+1]);g[sr][0]|=8;g[er][cols-1]|=2;const outs=[[cols-1,er]];
+      if(two){let er2=J.ri(0,rows-1);if(er2===er)er2=(er+2)%rows;const used=new Set(path.map(p=>p[0]+','+p[1]));const from=path[J.ri(1,Math.max(1,path.length-3))];used.delete(from[0]+','+from[1]);
+        const p2=this.walk(J,cols,rows,from,[cols-1,er2],used);if(!p2||p2.length<3)continue;for(let i=0;i<p2.length-1;i++)link(p2[i],p2[i+1]);g[er2][cols-1]|=2;outs.push([cols-1,er2]);path.push(...p2.slice(1));}
+      const onPath=new Set(path.map(p=>p[0]+','+p[1]));const cells=[];
+      for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){let m=g[y][x];const on=onPath.has(x+','+y);if(!on){const t=J.pick([5,10,3,6,12,9,7,11,14,13]);m=t;}
+        const sol=m;let rot=J.ri(0,3);let mm=m;for(let k=0;k<rot;k++)mm=pipeRot(mm);if(on&&rot===0&&J.rng()<0.8){mm=pipeRot(mm);rot=1;}
+        cells.push({x,y,m:mm,sol,on,ang:0,filt:0,leak:false,wet:false});}
+      const pc=cells.filter(c=>c.on&&!(c.x===0&&c.y===sr));
+      if(L>=2){for(const c of pc.sort(()=>J.rng()-0.5).slice(0,L>=4?2:1)){c.filt=2;}}
+      if(L>=3){for(const c of pc.filter(c=>!c.filt).sort(()=>J.rng()-0.5).slice(0,L>=4?2:1))c.leak=true;}
+      const tl=([26,32,36,40,48][L])*(J.ev.fast?0.8:1);J.s.P={cols,rows,cells,sr,outs,t:0,T:tl,done:false,flowT:0,len:path.length};J.s.flow=0;return;}},
+  walk(J,cols,rows,a,b,used){const key=p=>p[0]+','+p[1];const seen=new Set(used);const path=[a];seen.add(key(a));let guard=0;
+    const rec=p=>{if(guard++>4000)return false;if(p[0]===b[0]&&p[1]===b[1])return true;const ds=[0,1,2,3].sort(()=>J.rng()-0.5).sort((i,j)=>{const di=Math.abs(p[0]+PIPED[i][0]-b[0])+Math.abs(p[1]+PIPED[i][1]-b[1]),dj=Math.abs(p[0]+PIPED[j][0]-b[0])+Math.abs(p[1]+PIPED[j][1]-b[1]);return(di-dj)+(J.rng()-0.5)*2.2;});
+      for(const d of ds){const q=[p[0]+PIPED[d][0],p[1]+PIPED[d][1]];if(q[0]<0||q[1]<0||q[0]>=cols||q[1]>=rows||seen.has(key(q)))continue;seen.add(key(q));path.push(q);if(rec(q))return true;path.pop();}return false;};
+    return rec(a)?path:null;},
+  /* water reaches every cell connected to the pump; solved when all taps are reached and nothing on the way is clogged or leaking */
+  trace(P){const at=(x,y)=>P.cells[y*P.cols+x];P.cells.forEach(c=>c.wet=false);const st=at(0,P.sr);if(!(st.m&8))return{ok:false};const Q=[st];st.wet=true;let block=false;
+    while(Q.length){const c=Q.shift();if(c.filt>0||c.leak){block=true;continue;}for(let d=0;d<4;d++){if(!(c.m&(1<<d)))continue;const nx=c.x+PIPED[d][0],ny=c.y+PIPED[d][1];if(nx<0||ny<0||nx>=P.cols||ny>=P.rows)continue;const n=at(nx,ny);if(n.wet)continue;if(n.m&(1<<((d+2)%4))){n.wet=true;Q.push(n);}}}
+    const ok=P.outs.every(o=>{const c=at(o[0],o[1]);return c.wet&&(c.m&2)&&!c.filt&&!c.leak;});return{ok,block};},
+  geo(J){const P=J.s.P,W=JVW,H=JVH;const cs=Math.floor(Math.min((W-28)/P.cols,(H-40)/P.rows));const gw=cs*P.cols,gh=cs*P.rows;return{cs,x0:Math.round((W-gw)/2),y0:Math.round(24+(H-30-gh)/2),gw,gh};},
+  frame(J,dt){const S=J.s,P=S.P;S.anim+=dt;if(!P)return;for(const c of P.cells)if(c.ang>0)c.ang=Math.max(0,c.ang-dt*12);
+    if(P.done){P.flowT+=dt;if(P.flowT>1.1){S.solved++;this.newPuzzle(J);}return;}
+    P.t+=dt;if(P.t>=P.T){J.bad(30,JVW/2,JVH/2,'Sprack!');jSay('Pang! Trycket blev för högt och ett rör sprack. Nästa uppdrag!');this.newPuzzle(J);}},
+  down(J,p){const S=J.s,P=S.P;if(!P||P.done)return;const g=this.geo(J);const cx=Math.floor((p.x-g.x0)/g.cs),cy=Math.floor((p.y-g.y0)/g.cs);if(cx<0||cy<0||cx>=P.cols||cy>=P.rows)return;
+    const c=P.cells[cy*P.cols+cx];this.act(J,c);},
+  act(J,c){const S=J.s,P=S.P,g=this.geo(J);const px=g.x0+c.x*g.cs+g.cs/2,py=g.y0+c.y*g.cs+g.cs/2;
+    if(S.tool==='clean'){if(c.filt>0){c.filt--;jSfx('tick');if(!c.filt)J.add(10,px,py-6,'Rent');}else{jSay('Det röret behöver inte rengöras.');}}
+    else if(S.tool==='fix'){if(c.leak){c.leak=false;jSfx('pop');J.add(10,px,py-6,'Lagat');}else jSay('Det röret läcker inte.');}
+    else{if(c.filt>0&&J.lvl>=2){jSay('Filtret är igensatt – välj 🧽 Rengör.');}c.m=pipeRot(c.m);c.ang=Math.PI/2;jSfx('tick');}
+    const r=this.trace(P);if(r.ok){P.done=true;P.flowT=0;const left=Math.max(0,P.T-P.t);const m=J.chain();J.good((100+left*5+P.len*4)*m,JVW/2,g.y0-4,'Vatten!');J.tip(2+left/4,JVW/2,g.y0+8);jSay(J.pick(['Vattnet flödar! Bra jobbat.','Kranarna fylls – snyggt!','Perfekt, trycket är nere igen.']));}},
+  waveEnd(J){J.s.P=null;return J.s.solved?'Lösta rörsystem hittills: '+J.s.solved+'.':'';},
+  key(J,e){const S=J.s;if(e.code==='Digit1'){S.tool='rot';this.tools(J);return true;}if(e.code==='Digit2'&&J.lvl>=2){S.tool='clean';this.tools(J);return true;}if(e.code==='Digit3'&&J.lvl>=3){S.tool='fix';this.tools(J);return true;}return false;},
+  /* bot helper for tests: the next useful action */
+  hint(J){const S=J.s,P=S.P;if(!P||P.done)return null;for(const c of P.cells){if(!c.on)continue;if(c.filt>0)return{c,tool:'clean'};if(c.leak)return{c,tool:'fix'};if(c.m!==c.sol)return{c,tool:'rot'};}return null;},
+  draw(J,x){const S=J.s,W=JVW,H=JVH;x.fillStyle='#2a3140';x.fillRect(0,0,W,H);for(let i=0;i<W;i+=16){x.fillStyle='#262c3a';x.fillRect(i,0,8,H);}
+    for(let i=4;i<W;i+=24)for(let j=24;j<H;j+=24){x.fillStyle='#3a4256';x.fillRect(i,j,1,1);}
+    const P=S&&S.P;if(!P)return;const g=this.geo(J),cs=g.cs;
+    /* pressure gauge */const f=clamp(P.t/P.T,0,1);x.fillStyle='rgba(0,0,0,.4)';x.fillRect(g.x0,g.y0-9,g.gw,5);x.fillStyle=f<0.6?'#3fd06b':f<0.85?'#f0b52a':(Math.floor(S.anim*8)%2?'#ff3b3b':'#e0473c');x.fillRect(g.x0+1,g.y0-8,Math.round((g.gw-2)*f),3);jTxt(x,'TRYCK',g.x0-1,g.y0-4,'#cfd8ff',5,'right');
+    x.fillStyle='#1b2030';x.fillRect(g.x0-2,g.y0-2,g.gw+4,g.gh+4);
+    for(const c of P.cells){const cx=g.x0+c.x*cs,cy=g.y0+c.y*cs;x.fillStyle=(c.x+c.y)%2?'#232a3a':'#262e40';x.fillRect(cx,cy,cs,cs);
+      x.save();x.translate(cx+cs/2,cy+cs/2);if(c.ang>0)x.rotate(-c.ang);const w=Math.max(4,Math.round(cs*0.32)),h=cs/2;
+      const col=c.wet&&P.done?'#4aa3ff':c.wet?'#7fb8ff':'#9aa3b5',edge=c.wet?'#1e5fbf':'#5b6274';
+      for(let d=0;d<4;d++)if(c.m&(1<<d)){x.save();x.rotate(d*Math.PI/2);x.fillStyle=edge;x.fillRect(-w/2-1,-h,w+2,h+1);x.fillStyle=col;x.fillRect(-w/2,-h,w,h+1);x.restore();}
+      x.fillStyle=edge;x.fillRect(-w/2-1,-w/2-1,w+2,w+2);x.fillStyle=col;x.fillRect(-w/2,-w/2,w,w);x.restore();
+      if(c.filt>0){x.fillStyle='#8a5a2a';x.fillRect(cx+cs/2-w/2-1,cy+cs/2-w/2-1,w+2,w+2);x.fillStyle='#5a3a1a';x.fillRect(cx+cs/2-1,cy+cs/2-1,2,2);if(c.filt>1){x.fillRect(cx+cs/2-w/2,cy+cs/2-w/2,2,2);}}
+      if(c.leak){x.fillStyle='#e0473c';x.fillRect(cx+cs/2-2,cy+cs/2-1,4,2);const dy=(S.anim*20+c.x*7)%(cs/2);x.fillStyle='#7fb8ff';x.fillRect(cx+cs/2,Math.round(cy+cs/2+2+dy),1,2);}}
+    /* pump and taps */const py=g.y0+P.sr*cs+cs/2;x.fillStyle='#2f6fd6';x.fillRect(g.x0-12,py-6,10,12);x.fillStyle='#7fb8ff';x.fillRect(g.x0-10,py-4,6,4);jTxt(x,'P',g.x0-7,py+5,'#fff',6);
+    for(const o of P.outs){const oy=g.y0+o[1]*cs+cs/2;const wet=P.cells[o[1]*P.cols+o[0]].wet&&P.done;jEmo(x,'🚰',g.x0+g.gw+8,oy,9);if(wet){x.fillStyle='#4aa3ff';x.fillRect(g.x0+g.gw+9,oy+5,2,Math.round(4+P.flowT*8));}}
+    if(P.done){x.globalAlpha=Math.min(1,P.flowT*2)*0.25;x.fillStyle='#4aa3ff';x.fillRect(g.x0,g.y0,g.gw,g.gh);x.globalAlpha=1;}}};
+
+/* ================= JOBB: Djurrundan – djurskötare =================
+   The animals ask for things with little bubbles: food (each animal its own), water, brushing, a clean pen or a pat.
+   Pick the right tool and tap the animal. Wrong food makes it sad; a need left too long costs a heart. Each title brings
+   new animals and tasks: rabbits and brushing, a riding pupil who needs the right horse, dogs and cats, and at the top
+   an escaped rabbit to catch and a sick animal to send to the vet. */
+const DANI={
+ hast:{e:'🐴',n:'Hästen',food:'ho',names:['Stjärna','Blixten','Ronja','Tindra']},gris:{e:'🐷',n:'Grisen',food:'apple',names:['Nasse','Rosa']},
+ kanin:{e:'🐰',n:'Kaninen',food:'morot',names:['Hoppsan','Lurv']},hund:{e:'🐶',n:'Hunden',food:'ben',names:['Bamse','Kaxi']},katt:{e:'🐱',n:'Katten',food:'fisk',names:['Misse','Tiger']}};
+const DTOOL={ho:{e:'🌾',n:'Hö'},apple:{e:'🍎',n:'Äpple'},morot:{e:'🥕',n:'Morot'},ben:{e:'🦴',n:'Ben'},fisk:{e:'🐟',n:'Fisk'},vatten:{e:'💧',n:'Vatten'},borste:{e:'🖌️',n:'Borste'},kvast:{e:'🧹',n:'Kvast'},hand:{e:'🤚',n:'Klappa'},vet:{e:'📞',n:'Veterinär'}};
+const DNEED={mat:{n:'är hungrig'},vatten:{n:'är törstig',tool:'vatten'},borsta:{n:'vill bli borstad',tool:'borste'},mocka:{n:'har en smutsig box',tool:'kvast'},klappa:{n:'vill bli klappad',tool:'hand'},sjuk:{n:'verkar sjuk',tool:'vet'}};
+JOBG.djur={name:'Djurrundan',view:[184,160],
+  lvlTxt:l=>['Hästar och grisar','+ kaniner och borstning','+ ridlektioner','+ hundar och katter','+ rymlingar och veterinär'][l],
+  help:l=>'Djuren visar vad de behöver i en bubbla. Välj rätt sak nere och tryck på djuret. Varje djur har sin egen mat: hästen äter hö, grisen äpplen'+(l>=1?', kaninen morötter':'')+(l>=3?', hunden ben och katten fisk':'')+'. Ju snabbare du hjälper, desto mer poäng.'+(l>=2?' En ridelev vill ibland rida – välj en lugn häst åt nybörjare.':'')+(l>=4?' Rymmer en kanin: tryck på den för att fånga den!':''),
+  target:l=>[1800,2600,3300,4200,5000][l],
+  events:[{id:'regn',n:'Regnig dag',d:'Djuren blir leriga och vill bli borstade oftare.',dirty:true}],
+  start(J){const L=J.lvl;const kinds=['hast','gris','hast'].concat(L>=1?['kanin']:[]).concat(L>=3?['hund','katt']:[]).slice(0,[3,4,4,6,6][L]);
+    const used=new Set();const nm=k=>{const L=DANI[k].names.filter(n=>!used.has(n));const n=L.length?J.pick(L):DANI[k].names[0]+' 2';used.add(n);return n;};
+    J.s={tool:null,anim:0,an:kinds.map((k,i)=>({k,name:nm(k),i,need:null,nt:J.r(1,6),happy:1,x:0,y:0,bounce:0})),runner:null,pupil:null};this.lay(J);},
+  lay(J){const S=J.s,W=JVW,H=JVH;const n=S.an.length,cols=n<=4?2:3,rows=Math.ceil(n/cols);S.an.forEach((a,i)=>{const c=i%cols,r=Math.floor(i/cols);a.x=Math.round(W*(c+0.5)/cols);a.y=Math.round(34+(H-60)*(r+0.5)/rows);});},
+  resize(J){if(J.s)this.lay(J);},
+  wave(J,w){const S=J.s;S.an.forEach(a=>{a.need=null;a.nt=J.r(0.5,6);});S.runner=null;S.pupil=null;S.pupT=J.lvl>=2?J.r(12,25):99;S.runT=J.lvl>=4?J.r(15,30):99;this.tools(J);},
+  waveTxt(J,w){return['Godmorgon! Djuren vaknar och vill ha frukost.','Mitt på dagen – nu händer det mycket i stallet.','Kvällsrundan. Se till att alla mår bra innan natten.'][w];},
+  tools(J){const S=J.s,L=J.lvl;const T=['ho','apple'].concat(L>=1?['morot']:[]).concat(L>=3?['ben','fisk']:[]).concat(['vatten']).concat(L>=1?['borste']:[]).concat(['kvast','hand']).concat(L>=4?['vet']:[]);
+    jCmds(T.map(k=>jBtn(DTOOL[k].e+' '+DTOOL[k].n,'',()=>{S.tool=k;this.tools(J);jSfx('tick');},{cls:'small2'+(S.tool===k?' good':'')})));JM.dom.cmds.classList.add('g4');},
+  pickNeed(J,a){const L=J.lvl;const P=['mat','mat','vatten','mocka','klappa'].concat(L>=1?['borsta']:[]).concat(J.ev.dirty&&L>=1?['borsta','borsta']:[]).concat(L>=4?['sjuk']:[]);return J.pick(a.k==='hund'||a.k==='katt'?P.filter(n=>n!=='mocka'):P);},
+  frame(J,dt){const S=J.s;S.anim+=dt;const rate=J.rate()*[1,1.1,1.15,1.2,1.25][J.lvl]*[0.9,1.2,1][J.wave];
+    for(const a of S.an){a.bounce=Math.max(0,a.bounce-dt*3);if(a.away)continue;if(!a.need){a.nt-=dt*rate;if(a.nt<=0){const k=this.pickNeed(J,a);const P=(18-J.lvl)*J.pat();a.need={k,pat:P,P};jSfx('tick');}}
+      else{a.need.pat-=dt;if(a.need.pat<=0){J.lose(a.x,a.y-16);a.happy=Math.max(0,a.happy-0.34);jSay(a.name+' väntade för länge och blev ledsen.');a.need=null;a.nt=J.r(2,5);}}}
+    if(J.lvl>=2){S.pupT-=dt;if(S.pupT<=0&&!S.pupil){const pool=NPCS.filter(n=>n.look);const n=J.pick(pool);S.pupil={name:n.name,look:n.look,pat:16,P:16,beg:J.rng()<0.6};S.pupT=J.r(18,30);
+        const hs=S.an.filter(a=>a.k==='hast');hs.forEach((h,i)=>h.calm=i===0);jSay(n.name+' vill rida! '+(S.pupil.beg?'Hen har aldrig ridit förut.':'Hen är van ryttare och vill hoppa.')+' Tryck på hästen som passar.');}
+      if(S.pupil){S.pupil.pat-=dt;if(S.pupil.pat<=0){J.lose(20,JVH-20);jSay(S.pupil.name+' gick hem utan att rida.');S.pupil=null;}}}
+    if(J.lvl>=4){S.runT-=dt;if(S.runT<=0&&!S.runner){const k=S.an.find(a=>a.k==='kanin'&&!a.away);if(k){k.away=true;k.need=null;S.runner={a:k,x:JVW/2,y:JVH/2,vx:J.r(-40,40),vy:J.r(-30,30),t:0};jSay(k.name+' har rymt! Tryck på kaninen för att fånga den.');}S.runT=J.r(20,30);}
+      const R=S.runner;if(R){R.t+=dt;R.x+=R.vx*dt;R.y+=R.vy*dt;if(R.x<10||R.x>JVW-10)R.vx*=-1;if(R.y<30||R.y>JVH-14)R.vy*=-1;if(Math.random()<dt*1.5){R.vx=J.r(-50,50);R.vy=J.r(-40,40);}if(R.t>12){J.lose(R.x,R.y);R.a.away=false;S.runner=null;jSay('Kaninen hoppade in i skogen. Den kommer tillbaka ikväll.');}}}},
+  down(J,p){const S=J.s;const R=S.runner;if(R&&Math.hypot(p.x-R.x,p.y-R.y)<12){J.good(80*J.chain(),R.x,R.y-10,'Fångad');R.a.away=false;S.runner=null;jSay('Du fångade '+R.a.name+'! Tillbaka i hagen.');return;}
+    let best=null,bd=1e9;for(const a of S.an){if(a.away)continue;const d=Math.hypot(p.x-a.x,p.y-a.y);if(d<bd){bd=d;best=a;}}if(!best||bd>22)return;this.use(J,best);},
+  use(J,a){const S=J.s;
+    if(S.pupil&&a.k==='hast'){const ok=S.pupil.beg?a.calm:!a.calm;if(ok){J.good(70*J.chain(),a.x,a.y-18,'Bra val');jSay(S.pupil.name+' red '+a.name+' och hade jättekul!');}else{J.bad(25,a.x,a.y-18,'Fel häst');jSay(S.pupil.beg?a.name+' är för pigg för en nybörjare. Välj den lugna hästen (med ☺).':'Den lugna hästen är för nybörjare – välj en piggare häst åt '+S.pupil.name+'.');}S.pupil=null;return;}
+    if(!S.tool){jSay('Välj först vad du vill använda nere.');return;}
+    const N=a.need;if(!N){if(S.tool==='hand'){a.bounce=1;J.add(5,a.x,a.y-16);a.happy=Math.min(1,a.happy+0.05);jSfx('pop');}else{jSay(a.name+' behöver inget just nu.');}return;}
+    const want=N.k==='mat'?DANI[a.k].food:DNEED[N.k].tool;
+    if(S.tool===want){const f=clamp(N.pat/N.P,0,1);const m=J.chain();J.good((20+Math.round(f*15))*m,a.x,a.y-16,'');if(f>0.6)J.tip(1,a.x,a.y-12);a.need=null;a.nt=J.r(6,12);a.bounce=1;a.happy=Math.min(1,a.happy+0.1);
+      if(N.k==='sjuk')jSay('Veterinären kommer och tittar på '+a.name+'. Bra att du märkte det!');}
+    else{J.bad(15,a.x,a.y-16,'Fel');jSay(N.k==='mat'?a.name+' vill inte ha '+DTOOL[S.tool].n.toLowerCase()+'. '+DANI[a.k].n+' äter '+DTOOL[DANI[a.k].food].n.toLowerCase()+'.':a.name+' '+DNEED[N.k].n+' – välj '+DTOOL[DNEED[N.k].tool].n.toLowerCase()+'.');}},
+  waveEnd(J){const S=J.s;S.an.forEach(a=>{a.need=null;a.away=false;});S.runner=null;S.pupil=null;return'Alla djur mår bra'+(S.an.every(a=>a.happy>0.7)?' och är riktigt glada!':'.');},
+  key(J,e){const d=['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9'].indexOf(e.code);if(d>=0){const b=JM.dom.cmds.querySelectorAll('.mc')[d];if(b){b.click();return true;}}return false;},
+  draw(J,x){const S=J.s,W=JVW,H=JVH;x.fillStyle='#b8d98a';x.fillRect(0,0,W,H);for(let i=0;i<60;i++){x.fillStyle='#a6cc78';x.fillRect((i*37)%W,24+(i*53)%(H-24),2,1);}
+    x.fillStyle='#8a6242';x.fillRect(0,20,W,3);if(!S)return;
+    for(const a of S.an){const pw=Math.round(W/(S.an.length<=4?2:3))-8,ph=Math.round((H-60)/Math.ceil(S.an.length/(S.an.length<=4?2:3)))-4;
+      x.fillStyle=a.k==='hund'||a.k==='katt'?'#e8dcc4':'#d9b77a';x.fillRect(a.x-pw/2,a.y-ph/2+4,pw,ph-4);x.fillStyle='#8a6242';x.fillRect(a.x-pw/2,a.y-ph/2+4,pw,2);x.fillRect(a.x-pw/2,a.y-ph/2+4,2,ph-4);x.fillRect(a.x+pw/2-2,a.y-ph/2+4,2,ph-4);
+      if(a.need&&a.need.k==='mocka'){jEmo(x,'💩',a.x+pw/2-10,a.y+ph/2-8,8);}
+      if(a.away){jTxt(x,'Tom box',a.x,a.y+4,'#7a5a3a',6);continue;}
+      const by=Math.round(Math.sin(a.bounce*Math.PI)*-6+Math.sin(S.anim*2+a.i)*0.8);jEmo(x,DANI[a.k].e,a.x,a.y+4+by,16);if(a.k==='hast'&&a.calm&&S.pupil)jTxt(x,'☺ lugn',a.x,a.y+20,'#2f6f2f',6);
+      jTxt(x,a.name,a.x,a.y+ph/2-1,'#4a3a22',6);
+      if(a.need){const N=a.need;const ic=N.k==='mat'?DTOOL[DANI[a.k].food].e:DTOOL[DNEED[N.k].tool].e;jBubble(x,a.x+12,a.y-14,14,12);jEmo(x,ic,a.x+12,a.y-14,8);
+        const f=clamp(N.pat/N.P,0,1);x.fillStyle='rgba(0,0,0,.3)';x.fillRect(a.x+5,a.y-6,14,2);x.fillStyle=f>0.5?'#3fd06b':f>0.25?'#f0b52a':'#e0473c';x.fillRect(a.x+5,a.y-6,Math.round(14*f),2);}}
+    if(S.runner){const R=S.runner;jEmo(x,'🐰',R.x,R.y,14);jTxt(x,'!',R.x+8,R.y-8,'#e0302a',9);}
+    if(S.pupil){jPerson(x,14,H-6,S.pupil.look,{arm:'up'});jHearts(x,14,H-36,S.pupil.pat/S.pupil.P);}
+    if(S.tool){jBubble(x,W-14,H-14,16,14);jEmo(x,DTOOL[S.tool].e,W-14,H-14,10);}}};
+
+/* ================= JOBB: Fältet – bonde =================
+   A field of plots on the ship's farm deck. Sow, water, chase off bugs and harvest when the crop shines – before it
+   withers. Crops grow only while the soil is wet, and each has its own growing time and value. The kitchen posts
+   orders for a bonus, later titles add strawberries and pumpkins, a sprinkler, and a tractor that harvests a whole row. */
+const BCROP={vete:{e:'🌾',n:'Vete',t:7,v:30},potatis:{e:'🥔',n:'Potatis',t:10,v:45},morot:{e:'🥕',n:'Morötter',t:9,v:40},jordgubbe:{e:'🍓',n:'Jordgubbar',t:13,v:70},pumpa:{e:'🎃',n:'Pumpa',t:17,v:110}};
+JOBG.bonde={name:'Fältet',view:[184,160],waves:['Morgon','Mitt på dagen','Kväll'],
+  lvlTxt:l=>['Så, vattna och skörda','+ beställningar från köket','+ jordgubbar och skadedjur','+ sprinkler','+ pumpor och traktor'][l],
+  help:l=>'Välj ett frö och tryck på en tom ruta för att så. Grödorna växer bara när jorden är blöt – välj 💧 och tryck för att vattna. När grödan glittrar är den klar: välj 🧺 och skörda innan den vissnar.'+(l>=1?' Köket beställer ibland – leverera rätt gröda för bonus.':'')+(l>=2?' Kryp äter upp grödan: tryck på dem med 🧤.':'')+(l>=3?' Sprinklern vattnar en hel rad.':'')+(l>=4?' Traktorn skördar allt som är klart på en rad.':''),
+  target:l=>[2400,3100,3200,4000,5000][l],
+  events:[{id:'regn',n:'Regn i växthuset',d:'Sprinklersystemet regnar ibland – jorden håller sig blöt.',rain:true},{id:'torka',n:'Varm dag',d:'Jorden torkar snabbare än vanligt.',dry:true}],
+  start(J){const L=J.lvl;const cols=[4,4,5,5,5][L],rows=[2,3,3,3,4][L];J.s={cols,rows,plots:Array.from({length:cols*rows},(_,i)=>({i,c:null,g:0,w:0,ripe:0,bug:null,dead:false})),tool:'vete',anim:0,order:null,basket:{},rainT:0};},
+  wave(J,w){const S=J.s;S.order=null;S.ordT=J.lvl>=1?J.r(6,14):999;S.bugT=J.lvl>=2?J.r(8,15):999;this.tools(J);},
+  waveTxt(J,w){return['Solen tänds i odlingsdäcket.','Mitt på dagen växer allt fort – håll jorden blöt!','Kvällsskörd. Få in allt innan det vissnar!'][w];},
+  crops(J){return['vete','potatis','morot'].concat(J.lvl>=2?['jordgubbe']:[]).concat(J.lvl>=4?['pumpa']:[]);},
+  tools(J){const S=J.s,L=J.lvl;const T=this.crops(J).map(k=>[k,BCROP[k].e+' '+BCROP[k].n]).concat([['vatten','💧 Vattna'],['skorda','🧺 Skörda']]).concat(L>=2?[['bort','🧤 Kryp']]:[]).concat(L>=3?[['spr','🚿 Sprinkler']]:[]).concat(L>=4?[['trak','🚜 Traktor']]:[]);
+    jCmds(T.map(([k,n])=>jBtn(n,'',()=>{S.tool=k;this.tools(J);jSfx('tick');},{cls:'small2'+(S.tool===k?' good':'')})));JM.dom.cmds.classList.add('g4');},
+  geo(J){const S=J.s,W=JVW,H=JVH;const ps=Math.floor(Math.min((W-16)/S.cols,(H-58)/S.rows));return{ps,x0:Math.round((W-ps*S.cols)/2),y0:Math.round(40+(H-46-ps*S.rows)/2)};},
+  frame(J,dt){const S=J.s;S.anim+=dt;const dry=(J.ev.dry?0.11:0.075)*[1,1,1.05,1.1,1.15][J.lvl];
+    if(J.ev.rain){S.rainT-=dt;if(S.rainT<=0){S.rainT=J.r(12,20);S.raining=3;jSay('Det regnar från sprinklertaket!');}if(S.raining>0){S.raining-=dt;for(const p of S.plots)p.w=Math.min(1,p.w+dt*0.5);}}
+    for(const p of S.plots){if(!p.c||p.dead)continue;p.w=Math.max(0,p.w-dry*dt);const C=BCROP[p.c];
+      if(p.bug){p.bug.t+=dt;if(p.bug.t>6){p.c=null;p.bug=null;p.g=0;J.lose(...this.pc(J,p));jSay('Krypen åt upp grödan!');continue;}}
+      if(p.g<1){if(p.w>0)p.g=Math.min(1,p.g+dt/C.t);}else{p.ripe+=dt;if(p.ripe>9){p.dead=true;J.bad(15,...this.pc(J,p),'Vissnat');}}}
+    if(J.lvl>=2){S.bugT-=dt;if(S.bugT<=0){S.bugT=J.r(7,13)/J.rate();const L=S.plots.filter(p=>p.c&&!p.bug&&!p.dead&&p.g<1);if(L.length){J.pick(L).bug={t:0};jSfx('tick');}}}
+    if(J.lvl>=1){S.ordT-=dt;if(S.ordT<=0&&!S.order){const k=J.pick(this.crops(J));S.order={k,n:J.ri(2,J.lvl>=3?4:3),t:30,T:30,got:0};S.ordT=J.r(16,26);jSay('Köket beställer '+S.order.n+' '+BCROP[k].n.toLowerCase()+'!');}
+      if(S.order){S.order.t-=dt;if(S.order.t<=0){jSay('Köket hann inte få sin beställning.');J.combo=0;S.order=null;}}}},
+  pc(J,p){const g=this.geo(J),S=J.s;return[g.x0+(p.i%S.cols)*g.ps+g.ps/2,g.y0+Math.floor(p.i/S.cols)*g.ps+g.ps/2];},
+  down(J,p){const S=J.s,g=this.geo(J);const cx=Math.floor((p.x-g.x0)/g.ps),cy=Math.floor((p.y-g.y0)/g.ps);if(cx<0||cy<0||cx>=S.cols||cy>=S.rows)return;this.use(J,S.plots[cy*S.cols+cx]);},
+  harvest(J,p,quiet){const S=J.s,C=BCROP[p.c];const[px,py]=this.pc(J,p);const fresh=p.ripe<3;let pts=C.v+(fresh?15:0);
+    if(S.order&&S.order.k===p.c){S.order.got++;pts+=10;if(S.order.got>=S.order.n){const m=J.chain();J.good(120*m,JVW/2,34,'Beställning');J.tip(8,JVW/2,34);jSay('Köket fick sin beställning – tack!');S.order=null;}}
+    J.add(pts,px,py-8,quiet?'':C.n);if(!quiet)jSfx('ok');J.ok++;p.c=null;p.g=0;p.ripe=0;p.w=Math.max(0,p.w-0.2);},
+  use(J,p){const S=J.s,t=S.tool;const[px,py]=this.pc(J,p);
+    if(BCROP[t]){if(p.c){jSay(p.dead?'Rensa först: välj 🧺 och tryck på den vissna grödan.':'Rutan är redan sådd.');return;}p.c=t;p.g=0;p.ripe=0;p.dead=false;J.add(5,px,py-6);jSfx('pop');if(p.w<0.2)jSay('Glöm inte att vattna!');return;}
+    if(t==='vatten'){p.w=1;jSfx('tick');if(p.c&&!p.dead&&p.g<1)J.add(2,px,py-6);return;}
+    if(t==='spr'){const r=Math.floor(p.i/S.cols);for(const q of S.plots)if(Math.floor(q.i/S.cols)===r)q.w=1;jSfx('pop');J.add(4,px,py-6,'Sprinkler');return;}
+    if(t==='bort'){if(p.bug){p.bug=null;J.good(25,px,py-8,'Bort');}else jSay('Inga kryp där.');return;}
+    if(t==='skorda'){if(p.dead){p.c=null;p.dead=false;p.g=0;p.ripe=0;jSay('Den vissna grödan är bortrensad.');return;}if(!p.c){jSay('Inget att skörda där.');return;}if(p.g<1){J.bad(10,px,py-8,'För tidigt');p.c=null;p.g=0;jSay('Den var inte klar än!');return;}this.harvest(J,p);return;}
+    if(t==='trak'){const r=Math.floor(p.i/S.cols);let n=0;for(const q of S.plots)if(Math.floor(q.i/S.cols)===r&&q.c&&!q.dead&&q.g>=1){this.harvest(J,q,true);n++;}if(n){jSfx('ok');J.add(10*n,px,py-14,'Traktor');}else jSay('Inget klart att skörda på den raden.');}},
+  waveEnd(J){const S=J.s;let n=0;for(const p of S.plots){if(p.c&&!p.dead&&p.g>=1)n++;}return n?'Det fanns '+n+' grödor kvar att skörda.':'';},
+  key(J,e){const d=['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9'].indexOf(e.code);if(d>=0){const b=JM.dom.cmds.querySelectorAll('.mc')[d];if(b){b.click();return true;}}return false;},
+  draw(J,x){const S=J.s,W=JVW,H=JVH;x.fillStyle='#9fd0ff';x.fillRect(0,0,W,H);x.fillStyle='#cfe8ff';for(let i=0;i<W;i+=24)x.fillRect(i,20,12,2);
+    x.fillStyle='#7cbf5a';x.fillRect(0,30,W,H-30);if(!S)return;const g=this.geo(J);
+    if(S.order){const O=S.order;x.fillStyle='#fffdf4';x.fillRect(W-58,22,54,14);jEmo(x,BCROP[O.k].e,W-50,29,8);jTxt(x,O.got+'/'+O.n,W-34,32,'#333',7);x.fillStyle=O.t/O.T>0.3?'#3fd06b':'#e0473c';x.fillRect(W-56,34,Math.round(50*O.t/O.T),1);jTxt(x,'Köket',W-58,20,'#2c48c9',6,'left');}
+    for(const p of S.plots){const cx=g.x0+(p.i%S.cols)*g.ps,cy=g.y0+Math.floor(p.i/S.cols)*g.ps,s=g.ps;
+      x.fillStyle=p.w>0.05?'#5a3a22':'#9a7048';x.fillRect(cx+1,cy+1,s-2,s-2);for(let k=3;k<s-2;k+=5){x.fillStyle=p.w>0.05?'#4a2f1b':'#8a6240';x.fillRect(cx+2,cy+k,s-4,1);}
+      if(p.w>0.05){x.fillStyle='rgba(80,140,255,.8)';x.fillRect(cx+2,cy+s-4,Math.round((s-4)*p.w),2);}
+      if(p.c){const C=BCROP[p.c];if(p.dead){jEmo(x,'🥀',cx+s/2,cy+s/2,10);}else if(p.g<1){const sz=Math.round(5+p.g*7);if(p.g<0.35){x.fillStyle='#3aa65a';x.fillRect(Math.round(cx+s/2-1),Math.round(cy+s/2-1),2,4);x.fillRect(Math.round(cx+s/2-3),Math.round(cy+s/2-2),2,2);x.fillRect(Math.round(cx+s/2+1),Math.round(cy+s/2-2),2,2);}else jEmo(x,C.e,cx+s/2,cy+s/2,sz);
+          x.fillStyle='rgba(0,0,0,.35)';x.fillRect(cx+3,cy+2,s-6,2);x.fillStyle='#ffd34d';x.fillRect(cx+3,cy+2,Math.round((s-6)*p.g),2);}
+        else{jEmo(x,C.e,cx+s/2,cy+s/2,13);if(Math.floor(S.anim*4+p.i)%3===0){x.fillStyle='#fff7b0';x.fillRect(cx+4,cy+4,2,2);x.fillRect(cx+s-6,cy+7,1,1);}if(p.ripe>6){x.fillStyle='rgba(120,60,0,.35)';x.fillRect(cx+1,cy+1,s-2,s-2);}}
+        if(p.bug){const k=Math.sin(S.anim*10)*2;jEmo(x,'🐛',cx+s/2+k,cy+s-6,8);}}}
+    if(S.raining>0)for(let i=0;i<30;i++){x.fillStyle='rgba(120,170,255,.7)';x.fillRect((i*29+S.anim*40)%W,(i*17+S.anim*120)%H,1,3);}
+    jPerson(x,10,H-2,ST.look,{});}};
+
+/* ================= JOBB: Lektionen – lärare =================
+   A question goes up on the board and some pupils put up their hands with an answer. Tap the pupil who is right –
+   quickly, before the class gets restless. Pupils who start chatting raise the noise; tap them to hush them.
+   The subjects follow the title and the Swedish curriculum: counting, colours and animals for the youngest, mental
+   arithmetic (Lgr22: "metoder för beräkningar … vid huvudräkning"), the multiplication tables, spelling and space. */
+const LCOL=[['Vilken färg har en banan?','Gul',['Blå','Lila']],['Vilken färg har gräs?','Grön',['Röd','Svart']],['Vilken färg har snö?','Vit',['Grön','Brun']],['Vilken färg har en tomat?','Röd',['Blå','Grå']],['Vilken färg har himlen en solig dag?','Blå',['Rosa','Gul']],['Vilken färg har en apelsin?','Orange',['Lila','Grön']]];
+const LDJ=[['Vilket djur säger mu?','Ko',['Katt','Hund']],['Vilket djur säger voff?','Hund',['Gris','Häst']],['Vilket djur säger mjau?','Katt',['Ko','Får']],['Vilket djur säger nöff?','Gris',['Höna','Hund']],['Vilket djur säger kuckeliku?','Tupp',['Ko','Katt']]];
+const LSTAV=[['stjärna','sjärna','stjerna'],['sjuksköterska','skjuksköterska','sjuksjöterska'],['choklad','schoklad','tjoklad'],['kjol','schol','tjol'],['tjugo','kjugo','shugo'],['skjorta','sjorta','schorta'],['känguru','tjänguru','schänguru'],['hjärta','jerta','järta'],['ljus','jus','lius'],['gärna','järna','gjerna'],['rymdskepp','rymskepp','rymdsjepp'],['astronaut','astronout','astrånaut'],['vecka','veka','vekka'],['pojke','pojjke','påjke'],['garage','garasch','garaje'],['journalist','schurnalist','jornalist']];
+const LRYMD=[['Vilken planet är störst?','Jupiter',['Mars','Merkurius']],['Vilken planet ligger närmast solen?','Merkurius',['Venus','Jorden']],['Hur många planeter finns i vårt solsystem?','8',['9','12']],['Vilken planet kallas den röda planeten?','Mars',['Venus','Saturnus']],['Vad heter vår galax?','Vintergatan',['Andromeda','Orion']],['Vilken planet har stora ringar?','Saturnus',['Mars','Merkurius']],['Vad kretsar månen runt?','Jorden',['Solen','Mars']],['Vad är solen?','En stjärna',['En planet','En komet']],['Hur lång tid tar ett varv runt solen för jorden?','Ett år',['En månad','Ett dygn']],['Vilken planet är varmast?','Venus',['Merkurius','Mars']],['Vem gick först på månen?','Neil Armstrong',['Jurij Gagarin','Buzz Aldrin']],['Vem var först ut i rymden?','Jurij Gagarin',['Neil Armstrong','Sally Ride']],['Vilken planet ligger längst från solen?','Neptunus',['Uranus','Saturnus']]];
+const LEMO=['🍎','⭐','🐟','🌸','🚀','🐞'];
+JOBG.larare={name:'Lektionen',view:[184,160],waves:['Första lektionen','Efter rasten','Sista lektionen'],
+  lvlTxt:l=>['Räkna, färger och djur','+ plus och minus','+ gångertabellen','+ stavning och rymden','+ blandat och svårare tal'][l],
+  help:l=>'Frågan står på tavlan. Eleverna som räcker upp handen har ett svar i pratbubblan – tryck på den som har rätt. Snabbt svar ger mer poäng. Börjar någon prata i bänken (💬) blir det stökigt: tryck på eleven för att hyssja.'+(l>=4?' Ibland har ingen rätt – tryck då på "Ingen har rätt".':''),
+  target:l=>[4000,3500,3000,2500,2200][l],
+  events:[{id:'prov',n:'Provdag',d:'Klassen är tyst och koncentrerad, men frågorna är svårare.',quiet:true,hard:true},{id:'studsig',n:'Studsig klass',d:'Det är fredag – eleverna pratar mycket idag!',noisy:true}],
+  start(J){const pool=NPCS.filter(n=>n.look);const n=J.lvl>=2?6:4;const kids=[];for(let i=0;i<n;i++){const p=pool[(i*7+J.ri(0,pool.length-1))%pool.length];kids.push({name:p.name,look:p.look,i,ans:null,chat:0,hush:0});}
+    J.s={kids,q:null,noise:0,anim:0,qn:0};this.lay(J);},
+  lay(J){const S=J.s,W=JVW,H=JVH;const n=S.kids.length,cols=n<=4?4:3,rows=Math.ceil(n/cols);S.kids.forEach((k,i)=>{const c=i%cols,r=Math.floor(i/cols);k.x=Math.round(W*(c+0.5)/cols);k.y=Math.round(H*0.62+r*(H*0.34/rows));});},
+  resize(J){if(J.s)this.lay(J);},
+  wave(J,w){const S=J.s;S.q=null;S.noise=0;S.gap=0.6;S.kids.forEach(k=>{k.ans=null;k.chat=0;});},
+  waveTxt(J,w){return['Godmorgon klassen! Dags för lektion.','Alla är tillbaka från rasten.','Sista lektionen innan hemgång – håll fokus!'][w];},
+  num(J,a,spread){const set=new Set([a]);let g=0;while(set.size<3&&g++<50){const d=J.pick(spread);const v=a+(J.rng()<0.5?d:-d);if(v>=0)set.add(v);}return[...set].slice(1).map(String);},
+  makeQ(J){const L=J.lvl,hard=J.ev.hard;const r=J.rng();let q;
+    const add=(m)=>{const a=J.ri(1,m),b=J.ri(1,m);if(J.rng()<0.5)return{t:a+' + '+b+' = ?',a:String(a+b),w:this.num(J,a+b,[1,2,10])};const x=Math.max(a,b),y=Math.min(a,b);return{t:x+' − '+y+' = ?',a:String(x-y),w:this.num(J,x-y,[1,2])};};
+    const mul=()=>{const a=J.ri(2,10),b=J.ri(2,hard?12:10);if(J.rng()<0.75)return{t:a+' · '+b+' = ?',a:String(a*b),w:this.num(J,a*b,[a,b,1,2])};return{t:(a*b)+' / '+a+' = ?',a:String(b),w:this.num(J,b,[1,2])};};
+    const fact=L0=>{const f=J.pick(L0);return{t:f[0],a:f[1],w:f[2].slice()};};
+    const stav=()=>{const s=J.pick(LSTAV);return{t:'Hur stavas ordet?',a:s[0],w:[s[1],s[2]]};};
+    const count=()=>{const n=J.ri(2,hard?9:7);const e=J.pick(LEMO);return{t:'Hur många?',emo:e,n,a:String(n),w:this.num(J,n,[1,2])};};
+    if(L===0)q=r<0.45?count():r<0.75?fact(LCOL):fact(LDJ);
+    else if(L===1)q=r<0.75?add(10):r<0.9?add(20):count();
+    else if(L===2)q=r<0.65?mul():add(20);
+    else if(L===3)q=r<0.4?stav():r<0.75?fact(LRYMD):mul();
+    else q=r<0.25?stav():r<0.45?fact(LRYMD):r<0.75?add(hard?99:60):mul();
+    q.none=L>=4&&J.rng()<0.2;return q;},
+  ask(J){const S=J.s;const q=this.makeQ(J);const opts=q.none?q.w.slice(0,2):[q.a].concat(q.w.slice(0,2));
+    const hands=S.kids.filter(k=>k.chat<=0).sort(()=>J.rng()-0.5).slice(0,opts.length);S.kids.forEach(k=>k.ans=null);hands.forEach((k,i)=>k.ans=opts[i%opts.length]);
+    q.T=(J.lvl>=3?11:12)*(J.ev.hard?1.1:1);q.tl=q.T;S.q=q;S.qn++;
+    jSay(q.emo?'Hur många '+q.emo+' är det på tavlan?':q.t.includes('?')?q.t:q.t+'?');
+    jCmds(J.lvl>=4?[jBtn('Ingen har rätt','',()=>this.answer(J,null),{cls:'ghost'})]:[]);},
+  answer(J,k){const S=J.s,q=S.q;if(!q)return;const left=Math.max(0,q.tl);const x=k?k.x:JVW/2,y=k?k.y-34:40;
+    const right=k?(!q.none&&k.ans===q.a):q.none;
+    if(right){const m=J.chain();J.good((40+Math.round(left*3))*m,x,y,'Rätt');if(left>q.T*0.6)J.tip(1,x,y);jSay(J.pick(['Helt rätt!','Bra jobbat!','Precis!','Snyggt!'])+(q.none?' Ingen hade rätt – svaret är '+q.a+'.':''));}
+    else{J.bad(20,x,y,'Fel');jSay('Inte riktigt. Rätt svar är '+q.a+'.');}
+    S.q=null;S.gap=1.1;S.kids.forEach(k=>k.ans=null);jCmds([]);},
+  frame(J,dt){const S=J.s;S.anim+=dt;const noisy=J.ev.noisy?1.6:J.ev.quiet?0.5:1;
+    if(!S.q){S.gap-=dt;if(S.gap<=0)this.ask(J);}else{S.q.tl-=dt;if(S.q.tl<=0){J.combo=0;J.add(-10,JVW/2,40,'Tiden');jSay('Tiden gick ut. Rätt svar var '+S.q.a+'.');S.q=null;S.gap=1;S.kids.forEach(k=>k.ans=null);jCmds([]);}}
+    for(const k of S.kids){if(k.hush>0)k.hush-=dt;if(k.chat>0){k.chat+=dt;}else if(!k.ans&&k.hush<=0&&J.rng()<dt*0.05*noisy*(1+J.lvl*0.15)*[0.8,1.2,1][J.wave]){k.chat=0.01;}}
+    const chatting=S.kids.filter(k=>k.chat>0).length;S.noise=clamp(S.noise+dt*(chatting*9-4),0,100);
+    if(S.noise>=100){S.noise=40;J.bad(30,JVW/2,JVH*0.55,'Stökigt');jSay('Det blev för stökigt i klassen! Hyssja de som pratar.');S.kids.forEach(k=>{if(k.chat>0){k.chat=0;k.hush=3;}});}},
+  down(J,p){const S=J.s;let best=null,bd=1e9;for(const k of S.kids){const d=Math.hypot(p.x-k.x,p.y-(k.y-14));if(d<bd){bd=d;best=k;}}
+    if(!best||bd>22)return;if(best.chat>0){best.chat=0;best.hush=4;J.add(5,best.x,best.y-30,'Schh');jSfx('tick');return;}if(best.ans!=null&&S.q){this.answer(J,best);return;}if(S.q)jSay(best.name+' räcker inte upp handen.');},
+  waveEnd(J){const S=J.s;S.q=null;S.kids.forEach(k=>{k.ans=null;k.chat=0;});jCmds([]);return J.pick(['Ringklockan ringer!','Rast!','Bra lektion!']);},
+  key(J,e){const S=J.s;const d=['Digit1','Digit2','Digit3'].indexOf(e.code);if(d>=0&&S.q){const H=S.kids.filter(k=>k.ans!=null);if(H[d]){this.answer(J,H[d]);return true;}}if(e.code==='Digit0'&&S.q&&J.lvl>=4){this.answer(J,null);return true;}
+    if(e.code==='KeyH'){const k=S.kids.find(k=>k.chat>0);if(k){k.chat=0;k.hush=4;J.add(5,k.x,k.y-30,'Schh');}return true;}return false;},
+  draw(J,x){const S=J.s,W=JVW,H=JVH;x.fillStyle='#f2e6cf';x.fillRect(0,0,W,H);x.fillStyle='#e6d6b8';x.fillRect(0,Math.round(H*0.5),W,H);for(let i=0;i<W;i+=14){x.fillStyle='#ddc9a6';x.fillRect(i,Math.round(H*0.5),1,H);}
+    const bx=10,by=20,bw=W-20,bh=Math.round(H*0.34);x.fillStyle='#8a6242';x.fillRect(bx-2,by-2,bw+4,bh+4);x.fillStyle='#2f4a3a';x.fillRect(bx,by,bw,bh);x.fillStyle='#e9e2d0';x.fillRect(bx+bw-18,by+bh-3,8,2);
+    if(!S)return;const q=S.q;
+    if(q){if(q.emo){const n=q.n;const per=Math.min(n,5);for(let i=0;i<n;i++){const r=Math.floor(i/per),c=i%per;jEmo(x,q.emo,Math.round(W/2-(per-1)*9+c*18),by+14+r*16,12);}jTxt(x,'Hur många?',W/2,by+bh-6,'#e9e2d0',7);}
+      else{const words=q.t.split(' ');const lines=[''];for(const w of words){if((lines[lines.length-1]+' '+w).length>24)lines.push(w);else lines[lines.length-1]=(lines[lines.length-1]+' '+w).trim();}
+        lines.forEach((l,i)=>jTxt(x,l,W/2,by+Math.round(bh/2)-((lines.length-1)*6)+i*12+3,'#ffffff',q.t.length>16?8:10));}
+      const f=clamp(q.tl/q.T,0,1);x.fillStyle='rgba(0,0,0,.3)';x.fillRect(bx+4,by+bh-4,bw-30,2);x.fillStyle=f>0.4?'#3fd06b':'#f0b52a';x.fillRect(bx+4,by+bh-4,Math.round((bw-30)*f),2);}
+    /* noise meter */const nf=S.noise/100;jTxt(x,'Ljud',8,by+bh+12,'#7a5a3a',6,'left');x.fillStyle='rgba(0,0,0,.2)';x.fillRect(30,by+bh+8,W-40,3);x.fillStyle=nf<0.5?'#3fd06b':nf<0.8?'#f0b52a':'#e0473c';x.fillRect(30,by+bh+8,Math.round((W-40)*nf),3);
+    for(const k of S.kids){x.fillStyle='#b08a5a';x.fillRect(k.x-12,k.y-6,24,4);x.fillStyle='#8a6a3a';x.fillRect(k.x-11,k.y-2,2,6);x.fillRect(k.x+9,k.y-2,2,6);
+      jPerson(x,k.x,k.y-2,k.look,{arm:k.ans!=null?'up':null,mood:k.chat>0?'happy':null});x.fillStyle='#b08a5a';x.fillRect(k.x-12,k.y-6,24,3);
+      if(k.ans!=null){const t=k.ans;const w=Math.max(14,t.length*4+6);jBubble(x,k.x+2,k.y-34,w,11);jTxt(x,t,k.x+2,k.y-31,'#222',t.length>9?6:7);}
+      else if(k.chat>0){jBubble(x,k.x+6,k.y-32,14,10);jEmo(x,'💬',k.x+6,k.y-32,7);}else if(k.hush>0)jTxt(x,'…',k.x,k.y-28,'#7a5a3a',7);}
+    jPerson(x,W-10,Math.round(H*0.56),ST.look,{});}};
+
+/* ================= JOBB: Vårdcentralen – vårdpersonal =================
+   Patients wait on the bench. Tap one to give them a free bed, then choose the right tool and tap the patient – some
+   need two steps (take the temperature before the medicine, an X-ray before the cast) and some steps take a moment.
+   As a doctor you work out the problem from what the patient says; later comes triage (red first!) and animals.
+   Everything is kept to everyday scrapes and colds – a game, not medical advice. */
+const VTOOL={plaster:{e:'🩹',n:'Plåster'},termo:{e:'🌡️',n:'Termometer'},medicin:{e:'💊',n:'Medicin'},salva:{e:'🧴',n:'Salva'},kyl:{e:'🧊',n:'Kylpåse'},nasduk:{e:'🧻',n:'Näsdukar'},rontgen:{e:'📷',n:'Röntgen',wait:3},gips:{e:'🤍',n:'Gips',wait:3},pincett:{e:'🔍',n:'Pincett'}};
+const VAIL=[
+ {id:'skrubb',e:'🦵',n:'skrubbsår',steps:['plaster'],say:'Jag ramlade och skrapade knät.',lv:0},
+ {id:'feber',e:'🤒',n:'feber',steps:['termo','medicin'],say:'Jag är varm och fryser samtidigt.',lv:0},
+ {id:'bula',e:'🤕',n:'bula',steps:['kyl'],say:'Jag slog huvudet i en dörr.',lv:0},
+ {id:'mygg',e:'🦟',n:'myggbett',steps:['salva'],say:'Det kliar så mycket efter ett bett.',lv:0},
+ {id:'snuva',e:'🤧',n:'förkylning',steps:['nasduk'],say:'Jag nyser hela tiden.',lv:1},
+ {id:'arm',e:'💪',n:'bruten arm',steps:['rontgen','gips'],say:'Jag ramlade av cykeln och armen gör jätteont.',lv:1},
+ {id:'sticka',e:'☝️',n:'sticka i fingret',steps:['pincett'],say:'Jag fick en sticka när jag klättrade.',lv:1},
+ {id:'hund',e:'🐶',n:'sticka i tassen',steps:['pincett'],say:'(Hunden haltar och slickar på tassen.)',lv:4,pet:'🐶'},
+ {id:'kanin',e:'🐰',n:'skråma',steps:['plaster'],say:'(Kaninen har en liten skråma på örat.)',lv:4,pet:'🐰'}];
+JOBG.vard={name:'Vårdcentralen',view:[184,160],
+  lvlTxt:l=>['Plåster, feber och bulor','+ röntgen, gips och fler besvär','+ ta reda på vad som är fel','+ prioritera: rött först','+ djur och fyra sängar'][l],
+  help:l=>'Tryck på en patient på bänken för att ge hen en säng. Välj sedan rätt sak nere och tryck på patienten. Feber: mät först, sedan medicin. Bruten arm: röntgen, sedan gips.'+(l>=2?' Står det ? i bubblan – tryck på patienten och lyssna på vad hen säger.':'')+(l>=3?' Röda band är bråttom – ta dem först!':''),
+  target:l=>[1900,2100,2350,2400,2700][l],
+  events:[{id:'forkyld',n:'Förkylningsdag',d:'Många nyser idag – ha näsdukarna redo!',fav:'snuva'}],
+  start(J){const L=J.lvl;J.s={bench:[],beds:Array.from({length:[2,2,3,3,4][L]},()=>null),tool:null,anim:0,spawnT:0};},
+  wave(J,w){const S=J.s;S.bench=[];S.beds=S.beds.map(()=>null);S.spawnT=0.3;S.iv=[8,5.5,7][w]*(1-0.04*J.lvl)/J.rate();this.tools(J);},
+  waveTxt(J,w){return['Mottagningen öppnar.','Nu är det fullt i väntrummet!','Sista timmen innan kvällen.'][w];},
+  tools(J){const S=J.s,L=J.lvl;const T=['plaster','termo','medicin','kyl','salva'].concat(L>=1?['nasduk','rontgen','gips','pincett']:[]);
+    jCmds(T.map(k=>jBtn(VTOOL[k].e+' '+VTOOL[k].n,'',()=>{S.tool=k;this.tools(J);jSfx('tick');},{cls:'small2'+(S.tool===k?' good':'')})));JM.dom.cmds.classList.add(T.length>5?'g3':'g4');},
+  spawn(J){const S=J.s;if(S.bench.length>=4)return;const L=J.lvl;const pool=VAIL.filter(a=>a.lv<=L);let a=J.pick(pool);if(J.ev.fav&&J.rng()<0.5)a=VAIL.find(x=>x.id===J.ev.fav)||a;
+    const P2=NPCS.filter(n=>n.look);const n=J.pick(P2);const tri=L>=3?J.pick(['röd','gul','grön','grön']):null;const vip=J.ev.vip&&!S.vipDone&&J.wave===1;if(vip)S.vipDone=true;
+    const P=(42-L*2)*J.pat()*(tri==='röd'?0.55:1)*(vip?0.8:1);S.bench.push({a,name:a.pet?(a.pet==='🐶'?'Hunden Bamse':'Kaninen Lurv'):(vip?'Kapten ':'')+n.name,look:n.look,pat:P,P,tri,step:0,wait:0,hidden:L>=2&&!a.pet&&J.rng()<0.6,heard:false,vip});jSfx('tick');},
+  geo(){const W=JVW,H=JVH;return{W,H,bY:Math.round(H*0.34),bedY:Math.round(H*0.8)};},
+  bedX(i,n){return Math.round(JVW*(i+0.5)/n);},
+  frame(J,dt){const S=J.s;S.anim+=dt;S.spawnT-=dt;if(S.spawnT<=0){this.spawn(J);S.spawnT=S.iv*J.r(0.8,1.2);}
+    for(let i=S.bench.length-1;i>=0;i--){const p=S.bench[i];p.pat-=dt;if(p.pat<=0){S.bench.splice(i,1);J.lose(20+i*30,30);jSay(p.name+' väntade för länge och gick hem.');}}
+    S.beds.forEach((p,i)=>{if(!p)return;if(p.wait>0){p.wait-=dt;if(p.wait<=0)this.stepDone(J,i);return;}p.pat-=dt*0.7;if(p.pat<=0){S.beds[i]=null;J.lose(this.bedX(i,S.beds.length),this.geo().bedY-30);jSay(p.name+' tröttnade och gick.');}});},
+  down(J,p){const S=J.s,g=this.geo();
+    if(p.y<g.bY+14){const i=S.bench.findIndex((q,k)=>Math.abs(p.x-(22+k*36))<16);if(i>=0)this.admit(J,i);return;}
+    for(let i=0;i<S.beds.length;i++){if(Math.abs(p.x-this.bedX(i,S.beds.length))<20&&Math.abs(p.y-(g.bedY-10))<22){this.treat(J,i);return;}}},
+  admit(J,i){const S=J.s;const b=S.beds.indexOf(null);if(b<0){jSay('Alla sängar är upptagna.');jSfx('bad');return;}const p=S.bench[i];
+    if(p.tri&&p.tri!=='röd'&&S.bench.some(q=>q.tri==='röd')){J.bad(15,22+i*36,40,'Rött först');jSay('Det finns en patient med rött band som är mer bråttom!');}
+    S.bench.splice(i,1);S.beds[b]=p;p.pat=Math.max(p.pat,20);jSfx('pop');jSay(p.hidden?p.name+' ligger i säng '+(b+1)+'. Tryck på hen för att höra vad som är fel.':p.name+' i säng '+(b+1)+': '+p.a.n+'.');},
+  treat(J,i){const S=J.s,p=S.beds[i],g=this.geo();if(!p)return;const x=this.bedX(i,S.beds.length),y=g.bedY-30;
+    if(p.hidden&&!p.heard){p.heard=true;jSay(p.name+': "'+p.a.say+'"');jSfx('tick');return;}
+    if(p.wait>0){jSay('Vänta lite – '+VTOOL[p.a.steps[p.step]].n.toLowerCase()+' tar en stund.');return;}
+    if(!S.tool){jSay('Välj först vad du vill använda nere.');return;}
+    const need=p.a.steps[p.step];if(S.tool!==need){J.bad(15,x,y,'Fel');jSay(p.a.steps.length>1&&p.a.steps.includes(S.tool)?'Rätt sak men fel ordning – '+VTOOL[need].n.toLowerCase()+' först.':(p.hidden?'Det hjälper inte mot det '+p.name+' berättade.':'Det hjälper inte mot '+p.a.n+'.'));return;}
+    J.add(15,x,y);jSfx('pop');const T=VTOOL[need];if(T.wait){p.wait=T.wait;}else this.stepDone(J,i);},
+  stepDone(J,i){const S=J.s,p=S.beds[i];p.step++;p.pat=Math.min(p.P,p.pat+5);if(p.step<p.a.steps.length){jSay(p.name+': Och nu?');return;}
+    const x=this.bedX(i,S.beds.length),y=this.geo().bedY-30,f=clamp(p.pat/p.P,0,1);const m=J.chain();J.good((40+Math.round(f*30)+(p.tri==='röd'?30:0))*m,x,y,p.tri==='röd'?'Akut':'Frisk');J.tip((1+f*3)*(p.vip?3:1),x,y);
+    jSay(p.a.pet?J.pick(['Djuret ser mycket gladare ut!','Tassen är som ny.']):J.pick(['Tack, nu mår jag bättre!','Vad skönt, tack!','Tack så mycket!']));S.beds[i]=null;},
+  waveEnd(J){const S=J.s;const n=S.bench.length+S.beds.filter(Boolean).length;S.bench=[];S.beds=S.beds.map(()=>null);return n?n+' patienter får komma tillbaka senare.':'';},
+  key(J,e){const d=['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9'].indexOf(e.code);if(d>=0){const b=JM.dom.cmds.querySelectorAll('.mc')[d];if(b){b.click();return true;}}return false;},
+  draw(J,x){const S=J.s,g=this.geo(),W=g.W,H=g.H;x.fillStyle='#e8f3f0';x.fillRect(0,0,W,H);x.fillStyle='#d6ebe5';x.fillRect(0,0,W,g.bY+16);x.fillStyle='#2f9e7a';x.fillRect(0,g.bY+16,W,2);
+    x.fillStyle='#e0473c';x.fillRect(W-16,22,10,3);x.fillRect(W-12,18,3,11);
+    x.fillStyle='#8a6242';x.fillRect(4,g.bY-2,W-24,4);if(!S)return;
+    S.bench.forEach((p,k)=>{const bx=22+k*36;if(p.a.pet){jEmo(x,p.a.pet,bx,g.bY-8,14);}else jPerson(x,bx,g.bY,p.look,{mood:p.pat/p.P<0.3?'sad':null,vip:p.vip});jHearts(x,bx,g.bY-34,p.pat/p.P);
+      jBubble(x,bx+10,g.bY-24,12,11);if(p.hidden)jTxt(x,'?',bx+10,g.bY-21,'#2c48c9',8);else jEmo(x,p.a.e,bx+10,g.bY-24,7);
+      if(p.tri){x.fillStyle={röd:'#e0302a',gul:'#f0b52a',grön:'#3aa65a'}[p.tri];x.fillRect(bx-4,g.bY-14,8,2);}});
+    S.beds.forEach((p,i)=>{const bx=this.bedX(i,S.beds.length),by=g.bedY;x.fillStyle='#c9d6e3';x.fillRect(bx-18,by-8,36,10);x.fillStyle='#ffffff';x.fillRect(bx-18,by-10,36,4);x.fillStyle='#9aa8b8';x.fillRect(bx-18,by+2,2,6);x.fillRect(bx+16,by+2,2,6);x.fillStyle='#f6f6f2';x.fillRect(bx-17,by-13,8,4);
+      jTxt(x,String(i+1),bx-14,by+10,'#5a6a7a',6);if(!p)return;
+      if(p.a.pet)jEmo(x,p.a.pet,bx,by-16,14);else{jPerson(x,bx,by-4,p.look,{mood:p.step>0?'happy':null});x.fillStyle='#bfe0ff';x.fillRect(bx-10,by-12,20,5);}
+      jHearts(x,bx,by-40,p.pat/p.P);const need=p.a.steps[p.step];
+      if(p.wait>0){const T=VTOOL[need];jEmo(x,T.e,bx+14,by-30,9);x.fillStyle='rgba(0,0,0,.3)';x.fillRect(bx-12,by-46,24,2);x.fillStyle='#5bd1ff';x.fillRect(bx-12,by-46,Math.round(24*(1-p.wait/T.wait)),2);}
+      else{jBubble(x,bx+14,by-30,13,11);if(p.hidden&&!p.heard)jTxt(x,'?',bx+14,by-27,'#2c48c9',8);else jEmo(x,p.a.e,bx+14,by-30,7);}
+      if(p.tri){x.fillStyle={röd:'#e0302a',gul:'#f0b52a',grön:'#3aa65a'}[p.tri];x.fillRect(bx-4,by-18,8,2);}});
+    jPerson(x,W-10,g.bY,Object.assign({},ST.look,{shirt:'#7fd1c0'}),{});}};
+
+/* ================= JOBB: Styrrummet – pilot =================
+   Steer the ship through space: keep inside the course between the beacons, pick up energy crystals and dodge
+   asteroids. Drag a finger (or hold ◀ ▶ / the arrow keys) to steer. Each title adds something: comets, meteor showers,
+   wormholes that shoot you forward, and as captain a docking at the station at the end of every leg. */
+JOBG.pilot={name:'Styrrummet',view:[150,170],waves:['Avfärd','Asteroidbältet','Inflygning'],
+  lvlTxt:l=>['Håll kursen och undvik stenar','+ kometer','+ meteorregn','+ maskhål','+ dockning vid stationen'][l],
+  help:l=>'Dra med fingret för att styra skeppet (eller håll ◀ ▶). Håll dig mellan de blinkande fyrarna för att ligga på kurs – det ger poäng hela tiden. Plocka energikristaller 💎 och undvik stenarna.'+(l>=2?' Vid meteorregn: håll dig undan!':'')+(l>=3?' Flyg genom maskhål för bonus.':'')+(l>=4?' I slutet av varje sträcka dockar du: lägg skeppet mitt under porten.':''),
+  target:l=>[2300,2300,2300,2500,2500][l],
+  events:[{id:'solvind',n:'Solvind',d:'En stark solvind knuffar skeppet åt sidan.',wind:true}],
+  start(J){J.s={ship:{x:75,tx:75,sh:3,hit:0},obj:[],stars:Array.from({length:50},()=>({x:J.r(0,150),y:J.r(0,200),z:J.r(0.3,1)})),t:0,acc:0,spawn:0,cry:0,shower:0,hold:0,anim:0,ph:J.r(0,6),dock:null,warp:0};this.pads(J);},
+  pads(J){const S=J.s;const C=JM.dom.cmds;C.innerHTML='';C.className='mini-cmds duo';
+    [['◀',-1],['▶',1]].forEach(([t,d])=>{const b=el('button',{type:'button',class:'mc small2 pad2'},el('b',null,t));const on=e=>{e.preventDefault();S.hold=d;};const off=()=>{if(S.hold===d)S.hold=0;};
+      b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointerleave',off);b.addEventListener('pointercancel',off);b.addEventListener('contextmenu',e=>e.preventDefault());C.appendChild(b);});},
+  wave(J,w){const S=J.s;S.obj=[];S.t=0;S.spawn=1;S.cry=0.8;S.shower=J.lvl>=2?J.r(12,22):999;S.worm=J.lvl>=3?J.r(10,20):999;S.dock=null;S.docked=false;this.pads(J);},
+  waveTxt(J,w){return['Skeppet lämnar dockan. Håll kursen!','Vi närmar oss asteroidbältet – se upp!','Sista sträckan. Snart framme!'][w];},
+  lane(J,t){const W=JVW;return W/2+Math.sin(t*0.33+J.s.ph)*W*0.22+Math.sin(t*0.71)*W*0.08;},
+  hw(J){return[30,28,26,24,22][J.lvl];},
+  speed(J){return[42,50,56,62,68][J.lvl]*[1,1.25,1.1][J.wave]*(J.s.warp>0?2.2:1);},
+  frame(J,dt){const S=J.s,sh=S.ship,W=JVW,H=JVH;S.anim+=dt;S.t+=dt;const v=this.speed(J);if(S.warp>0)S.warp-=dt;
+    if(S.hold)sh.tx=clamp(sh.tx+S.hold*95*dt,6,W-6);if(J.ev.wind)sh.tx=clamp(sh.tx+Math.sin(S.t*0.5)*14*dt,6,W-6);
+    sh.x+=(sh.tx-sh.x)*Math.min(1,dt*8);if(sh.hit>0)sh.hit-=dt;
+    for(const s of S.stars){s.y+=v*s.z*dt*0.6;if(s.y>H){s.y=-2;s.x=J.r(0,W);}}
+    const sy=H-26,cx=this.lane(J,S.t+(sy)/v*0),hw=this.hw(J);
+    const docking=J.lvl>=4&&J.len-J.t<7;
+    if(!docking){S.spawn-=dt*J.rate();if(S.spawn<=0){S.spawn=J.r(0.7,1.3)*[1.25,1.05,0.95,0.85,0.78][J.lvl]*[1,0.8,0.9][J.wave];const lx=this.lane(J,S.t+ (sy+10)/v);
+        S.obj.push({k:'rock',x:J.rng()<0.6?lx+J.r(-hw,hw):J.r(6,W-6),y:-8,r:J.r(4,7),rot:J.r(0,6),vr:J.r(-2,2),vx:J.r(-6,6)});
+        if(J.lvl>=1&&J.rng()<0.18)S.obj.push({k:'comet',x:J.r(0,W),y:-10,r:2.5,vx:J.r(-30,30),vy:v*1.2});}
+      S.cry-=dt;if(S.cry<=0){S.cry=J.r(1.2,2.0);const lx=this.lane(J,S.t+(sy+10)/v);S.obj.push({k:'cry',x:clamp(lx+J.r(-hw*0.7,hw*0.7),6,W-6),y:-8,r:4});}
+      S.shower-=dt;if(S.shower<=0){S.shower=J.r(18,28);jSay('Meteorregn! Håll dig undan!');for(let i=0;i<7;i++)S.obj.push({k:'rock',x:J.r(6,W-6),y:-8-i*22,r:J.r(3,5),rot:0,vr:3,vx:J.r(-10,10),vy:v*0.6});}
+      S.worm-=dt;if(S.worm<=0){S.worm=J.r(18,26);S.obj.push({k:'worm',x:this.lane(J,S.t+(sy+10)/v),y:-14,r:9});}}
+    else if(!S.dock){S.dock={x:clamp(this.lane(J,S.t)+J.r(-18,18),20,W-20),y:-30};S.obj=S.obj.filter(o=>o.y>H*0.5);jSay('Dockning! Lägg skeppet mitt under porten.');}
+    for(const o of S.obj){o.y+=(o.vy||v)*dt;o.x+=(o.vx||0)*dt;if(o.rot!=null)o.rot+=(o.vr||0)*dt;
+      if(!o.done&&Math.abs(o.y-sy)<o.r+5&&Math.abs(o.x-sh.x)<o.r+4){o.done=true;
+        if(o.k==='cry'){const m=J.chain();J.add(25*m,o.x,o.y-8);jSfx('coin');J.ok++;}
+        else if(o.k==='worm'){S.warp=2;J.good(60,o.x,o.y-8,'Maskhål');}
+        else if(sh.hit<=0){sh.hit=1.4;sh.sh--;J.bad(25,sh.x,sy-12,'Träff');if(sh.sh<=0){sh.sh=3;J.add(-40,sh.x,sy-20,'Skölden');jSay('Skölden tog slut – den laddas om. Var försiktig!');}}}}
+    S.obj=S.obj.filter(o=>o.y<H+12&&!(o.done&&o.k!=='rock'));
+    const inLane=Math.abs(sh.x-this.lane(J,S.t))<hw;S.inLane=inLane;if(inLane&&!docking){S.acc+=dt*6;if(S.acc>=5){J.add(5);S.acc-=5;}}
+    if(S.dock&&!S.docked){S.dock.y+=dt*28;if(S.dock.y>=sy-14){S.docked=true;const d=Math.abs(sh.x-S.dock.x);if(d<3){J.good(150,sh.x,sy-20,'Perfekt dockning');}else if(d<7){J.good(80,sh.x,sy-20,'Dockad');}else{J.bad(30,sh.x,sy-20,'Krock');jSay('Bom! Skeppet missade porten.');}}}},
+  down(J,p){J.s.ship.tx=clamp(p.x,6,JVW-6);J.s.drag=true;},move(J,p){if(J.s.drag)J.s.ship.tx=clamp(p.x,6,JVW-6);},up(J){J.s.drag=false;},
+  key(J,e){const S=J.s;if(e.code==='ArrowLeft'){S.hold=-1;return true;}if(e.code==='ArrowRight'){S.hold=1;return true;}return false;},
+  keyUp(J,e){const S=J.s;if(e.code==='ArrowLeft'&&S.hold===-1)S.hold=0;if(e.code==='ArrowRight'&&S.hold===1)S.hold=0;},
+  waveEnd(J){const S=J.s;S.obj=[];S.hold=0;return J.wave<2?'Sträckan avklarad.':'Framme vid Nya världen-stationen!';},
+  draw(J,x){const S=J.s,W=JVW,H=JVH;x.fillStyle='#050816';x.fillRect(0,0,W,H);if(!S)return;
+    for(const s of S.stars){x.fillStyle=s.z>0.7?'#ffffff':s.z>0.5?'#9aa6e8':'#4a5288';const l=S.warp>0?4:1;x.fillRect(Math.round(s.x),Math.round(s.y),1,l);}
+    const v=this.speed(J),hw=this.hw(J);for(let y=-((S.t*v)%18);y<H;y+=18){const tt=S.t+(H-26-y)/v*-1;const lx=this.lane(J,S.t-(y-(H-26))/v);const on=Math.floor(S.anim*3+y/18)%2;
+      x.fillStyle=on?'#3fd06b':'#1e6a3a';x.fillRect(Math.round(lx-hw),Math.round(y),2,2);x.fillRect(Math.round(lx+hw),Math.round(y),2,2);}
+    for(const o of S.obj){if(o.k==='rock'){x.fillStyle='#5a5f73';x.beginPath();x.arc(o.x,o.y,o.r,0,7);x.fill();x.fillStyle='#8a8fa6';x.beginPath();x.arc(o.x-1,o.y-1,o.r-1.2,0,7);x.fill();x.fillStyle='#6b7088';x.fillRect(Math.round(o.x+Math.cos(o.rot)*o.r*0.4),Math.round(o.y+Math.sin(o.rot)*o.r*0.4),2,2);}
+      else if(o.k==='comet'){x.fillStyle='rgba(180,220,255,.5)';x.fillRect(Math.round(o.x-o.vx*0.08),Math.round(o.y-10),2,10);x.fillStyle='#fff';x.fillRect(Math.round(o.x)-1,Math.round(o.y)-1,3,3);}
+      else if(o.k==='cry')jEmo(x,'💎',o.x,o.y,9);
+      else if(o.k==='worm'){for(let r=o.r;r>2;r-=3){x.strokeStyle='rgba(180,110,255,'+(0.3+0.5*(1-r/o.r))+')';x.lineWidth=1.5;x.beginPath();x.arc(o.x,o.y,r,S.anim*3+r,S.anim*3+r+4.5);x.stroke();}}}
+    if(S.dock){const d=S.dock;x.fillStyle='#8a90a8';x.fillRect(0,Math.round(d.y-14),W,10);x.fillStyle='#3a3f55';x.fillRect(Math.round(d.x-7),Math.round(d.y-6),14,6);x.fillStyle='#ffd34d';x.fillRect(Math.round(d.x-1),Math.round(d.y-4),2,4);}
+    const sh=S.ship,sy=H-26;if(!(sh.hit>0&&Math.floor(S.anim*10)%2)){const X=Math.round(sh.x);x.fillStyle='#e9edf5';x.fillRect(X-4,sy-9,8,15);x.fillStyle='#c9cfdd';x.fillRect(X+2,sy-9,2,15);x.fillStyle='#e0473c';x.fillRect(X-3,sy-13,6,4);x.fillRect(X-2,sy-15,4,2);x.fillRect(X-1,sy-16,2,1);x.fillStyle='#5bd1ff';x.fillRect(X-2,sy-6,4,3);x.fillStyle='#fff';x.fillRect(X-2,sy-6,1,1);
+      x.fillStyle='#e0473c';x.fillRect(X-8,sy,4,7);x.fillRect(X+4,sy,4,7);const fl=3+Math.floor(S.anim*20)%3;x.fillStyle='#ffb347';x.fillRect(X-3,sy+6,6,fl);x.fillStyle='#ffe066';x.fillRect(X-1,sy+6,2,fl);}
+    for(let i=0;i<3;i++){x.fillStyle=i<sh.sh?'#5bd1ff':'rgba(255,255,255,.2)';x.fillRect(4+i*6,H-8,4,4);}jTxt(x,S.inLane?'På kurs':'Ur kurs!',W-4,H-4,S.inLane?'#3fd06b':'#ff7b7b',6,'right');}};
+
+/* ================= JOBB: Åkvärden – nöjesparksvärd =================
+   You run the entrance to a ride at Liseberg on board. Check that each visitor is tall enough (the sign changes ride by
+   ride – one is for small children only), fill the train and send it off. Titles add ride bands, safety bars to close
+   before the train leaves, the cinema with its age limits, and at the top a fast-pass queue and a lost child to reunite. */
+const NRIDE=[{n:'Rymdbanan',min:120},{n:'Kometen',min:130},{n:'Lilla raketen',min:95,max:140}];
+const NFILM=[{n:'Robotkatten',age:0,txt:'Barntillåten'},{n:'Månens hemlighet',age:7,txt:'Från 7 år'},{n:'Svarta hålet',age:11,txt:'Från 11 år'},{n:'Rymdspöket',age:15,txt:'Från 15 år'}];
+JOBG.noje={name:'Åkvärden',view:[184,160],waves:['Förmiddag','Eftermiddag','Kväll'],
+  lvlTxt:l=>['Mät längden','+ åkband','+ säkerhetsbyglar','+ bion och åldersgränser','+ snabbkö och borttappade barn'][l],
+  help:l=>'Titta på skylten: hur lång måste man vara? Längden står vid mätstickan. Tryck ✓ Släpp in eller ✗ Neka. När tåget är fullt (eller nästan) trycker du SKICKA TÅGET.'+(l>=1?' Man måste också ha åkband (grönt på armen).':'')+(l>=2?' Stäng alla säkerhetsbyglar (tryck på vagnarna) innan tåget går!':'')+(l>=3?' Vid bion gäller åldersgränsen på affischen.':'')+(l>=4?' Guldbiljetter går före i kön, och borttappade barn letar efter någon i samma tröjfärg.':''),
+  target:l=>[1000,850,900,950,1200][l],
+  events:[{id:'sommarlov',n:'Lovdag',d:'Massor av barn i parken idag!',rate:1.2,kids:true}],
+  start(J){J.s={q:[],cur:null,seats:[],away:0,spawnT:0,anim:0,lost:null,bio:false};this.cmds(J);},
+  cmds(J){jCmds([jBtn('✓ Släpp in','',()=>this.decide(J,true),{cls:'good'}),jBtn('✗ Neka','',()=>this.decide(J,false),{cls:'bad'})]);jGo('SKICKA TÅGET',true);},
+  wave(J,w){const S=J.s;S.q=[];S.cur=null;S.seats=[];S.away=0;S.ride=NRIDE[w];S.spawnT=0.2;S.iv=[3.6,2.8,3.2][w]*(1-0.04*J.lvl)/J.rate();S.lost=null;S.lostT=J.lvl>=4?J.r(10,25):999;this.cmds(J);},
+  waveTxt(J,w){const R=NRIDE[w];return'Du sköter '+R.n+' – '+(R.max?'för barn mellan '+R.min+' och '+R.max+' cm.':'minst '+R.min+' cm lång.');},
+  mk(J){const L=J.lvl;const pool=NPCS.filter(n=>n.look);const n=J.pick(pool);const kid=J.rng()<(J.ev.kids?0.75:0.5);const h=kid?J.ri(92,150):J.ri(140,192);const age=kid?J.ri(4,14):J.ri(16,60);
+    const band=L<1?true:J.rng()<0.78;const fast=L>=4&&J.rng()<0.2;return{name:n.name,look:n.look,h,age,band,fast,pat:(30-L)*J.pat(),P:(30-L)*J.pat(),x:-10,y:0,walk:0};},
+  spawn(J){const S=J.s;if(S.q.length>=5)return;S.q.push(this.mk(J));},
+  rules(J,v){const S=J.s;if(S.bio){const F=S.film;return{ok:v.age>=F.age&&(J.lvl<1||v.band||true),why:v.age<F.age?v.name+' är '+v.age+' år – filmen är '+F.txt.toLowerCase()+'.':''};}
+    const R=S.ride;if(v.h<R.min)return{ok:false,why:v.name+' är '+v.h+' cm – minst '+R.min+' cm.'};if(R.max&&v.h>R.max)return{ok:false,why:v.name+' är '+v.h+' cm – max '+R.max+' cm.'};if(J.lvl>=1&&!v.band)return{ok:false,why:v.name+' har inget åkband.'};return{ok:true,why:''};},
+  geo(){const W=JVW,H=JVH;return{W,H,stick:Math.round(W*0.36),fy:Math.round(H*0.86),plat:Math.round(H*0.52)};},
+  next(J){const S=J.s;if(S.cur||!S.q.length)return;const fi=J.lvl>=4?S.q.findIndex(q=>q.fast):-1;const v=S.q.splice(fi>0?fi:0,1)[0];S.cur=v;v.st='walk';v.t=0;S.bio=J.lvl>=3&&J.rng()<0.4;if(S.bio)S.film=J.pick(NFILM);
+    jSay(S.bio?v.name+' vill se '+S.film.n+' på bion ('+S.film.txt.toLowerCase()+'). Hen är '+v.age+' år.':v.name+(v.fast?' (guldbiljett)':'')+' vill åka '+S.ride.n+'. Längd: '+v.h+' cm'+(J.lvl>=1?(v.band?', har åkband.':', inget åkband.'):'.'));},
+  decide(J,yes){const S=J.s,v=S.cur,g=this.geo();if(!v||v.st!=='wait'||J.phase!=='play')return;
+    if(S.bio){const r=this.rules(J,v);if(yes===r.ok){J.good(25*(yes?J.chain():1),g.stick,g.fy-36,yes?'In':'Rätt');}else{J.bad(yes?30:15,g.stick,g.fy-36,yes?'För ung':'Fel');jSay(yes?r.why:v.name+' fick faktiskt se filmen.');}S.cur=null;return;}
+    if(yes&&!S.away&&S.seats.length>=6){jSay('Tåget är fullt – skicka det först!');return;}if(yes&&S.away>0){jSay('Tåget är ute på en tur – vänta tills det kommer tillbaka.');return;}
+    const r=this.rules(J,v);if(v.fast&&yes&&r.ok)J.add(10,g.stick,g.fy-44,'Snabbkö');
+    if(yes&&r.ok){S.seats.push({look:v.look,bar:J.lvl>=2?false:true});J.add(15,g.stick,g.fy-36,'In');J.ok++;jSfx('pop');}
+    else if(!yes&&!r.ok){J.good(20,g.stick,g.fy-36,'Rätt');}
+    else if(yes&&!r.ok){J.bad(30,g.stick,g.fy-36,'Osäkert!');jSay(r.why+' Det var inte säkert.');}
+    else{J.bad(15,g.stick,g.fy-36,'Fel');jSay(v.name+' fick faktiskt åka – hen var besviken.');}
+    S.cur=null;},
+  go(J){const S=J.s,g=this.geo();if(S.away>0){jSay('Tåget är redan ute.');return;}if(!S.seats.length){jSay('Tåget är tomt.');return;}
+    if(S.seats.some(s=>!s.bar)){J.bad(40,JVW*0.75,g.plat-20,'Byglar!');jSay('Stopp! En säkerhetsbygel är öppen. Stäng alla byglar först.');return;}
+    const n=S.seats.length;const m=J.chain();J.good((n*15+(n>=6?40:0))*m,JVW*0.75,g.plat-20,n>=6?'Fullt tåg':'Iväg');J.tip(n*0.8,JVW*0.75,g.plat-16);S.seats=[];S.away=6;S.trainX=0;},
+  frame(J,dt){const S=J.s,g=this.geo();S.anim+=dt;S.spawnT-=dt;if(S.spawnT<=0){this.spawn(J);S.spawnT=S.iv*J.r(0.8,1.2);}
+    S.q.forEach((v,i)=>{const tx=Math.max(6,g.stick-18-i*12),ty=g.fy-4-i*6;v.x+=(tx-v.x)*Math.min(1,dt*3);v.y+=(ty-v.y)*Math.min(1,dt*3);v.walk+=dt;v.pat-=dt;});
+    for(let i=S.q.length-1;i>=0;i--){if(S.q[i].pat<=0){const v=S.q.splice(i,1)[0];J.lose(v.x,v.y-30);jSay(v.name+' tröttnade på kön.');}}
+    if(S.away>0){S.away-=dt;S.trainX+=dt*60;if(S.away<=0){S.away=0;jSfx('tick');}}
+    if(!S.cur)this.next(J);const v=S.cur;if(v){v.t+=dt;if(v.st==='walk'){v.x+=(g.stick-8-v.x)*Math.min(1,dt*5);v.y+=(g.fy-v.y)*Math.min(1,dt*5);v.walk+=dt;if(v.t>0.5)v.st='wait';}else{v.pat-=dt*0.6;if(v.pat<=0){J.lose(v.x,v.y-30);S.cur=null;}}}
+    if(J.lvl>=4){S.lostT-=dt;if(S.lostT<=0&&!S.lost&&S.q.length>=2){const par=J.pick(S.q);S.lost={look:Object.assign({},par.look,{hair:J.pick(['#22222a','#c98b3c'])}),par,t:14};S.lostT=J.r(25,35);jSay('Ett barn har tappat bort sin förälder! Vem i kön har samma tröjfärg? Tryck på hen.');}
+      if(S.lost){S.lost.t-=dt;if(S.lost.t<=0||!S.q.includes(S.lost.par)){if(S.lost.t<=0){J.lose(14,JVH*0.4);jSay('Parkpersonalen hjälpte barnet istället.');}S.lost=null;}}}},
+  down(J,p){const S=J.s,g=this.geo();
+    if(S.lost){for(const v of S.q){if(Math.hypot(p.x-v.x,p.y-(v.y-12))<9){if(v===S.lost.par){J.good(80,v.x,v.y-30,'Återförenade');jSay('Barnet hittade sin förälder igen!');S.lost=null;}else{J.bad(15,v.x,v.y-30,'Fel');jSay('Det var inte barnets förälder. Titta på tröjfärgen!');}return;}}}
+    if(J.lvl>=2&&!S.away){const tx=Math.round(JVW*0.56);for(let i=0;i<S.seats.length;i++){const sx=tx+i*12;if(Math.abs(p.x-sx)<6&&Math.abs(p.y-(g.plat-6))<10){if(!S.seats[i].bar){S.seats[i].bar=true;jSfx('tick');J.add(3,sx,g.plat-18);}return;}}}},
+  waveEnd(J){const S=J.s;const n=S.q.length;S.q=[];S.cur=null;S.seats=[];S.lost=null;return n?n+' i kön får komma tillbaka senare.':'';},
+  key(J,e){if(e.code==='KeyJ'||e.code==='ArrowRight'){this.decide(J,true);return true;}if(e.code==='KeyN'||e.code==='ArrowLeft'){this.decide(J,false);return true;}if(e.code==='Enter'||e.code==='Space'){const S=J.s;if(J.lvl>=2)S.seats.forEach(s=>s.bar=true);this.go(J);return true;}return false;},
+  draw(J,x){const S=J.s,g=this.geo(),W=g.W,H=g.H;const sky=x.createLinearGradient(0,0,0,H*0.5);sky.addColorStop(0,'#1d2147');sky.addColorStop(1,'#5a3a8a');x.fillStyle=sky;x.fillRect(0,0,W,H);
+    x.fillStyle='#3a2a5a';x.fillRect(0,Math.round(H*0.55),W,H);for(let i=0;i<W;i+=10){x.fillStyle=(i/10)%2?'#ffd34d':'#ff6b6b';x.fillRect(i,Math.round(H*0.25),5,2);}
+    if(!S)return;const R=S.ride||NRIDE[0];
+    /* the coaster track and train */const ty=g.plat;x.strokeStyle='#b46cff';x.lineWidth=2;x.beginPath();x.moveTo(W*0.5,ty);x.lineTo(W,ty);x.stroke();x.beginPath();x.moveTo(W*0.62,ty);x.quadraticCurveTo(W*0.8,H*0.05,W,H*0.2);x.stroke();
+    const tx=Math.round(W*0.56)+(S.away>0?Math.round(S.trainX):0);for(let i=0;i<6;i++){const sx=tx+i*12;if(sx>W+10)continue;x.fillStyle=i===0?'#e0473c':'#2f6fd6';x.fillRect(sx-5,ty-8,11,7);const s=S.away>0?null:S.seats[i];
+      if(s){jPerson(x,sx,ty-4,s.look,{});x.fillStyle=i===0?'#e0473c':'#2f6fd6';x.fillRect(sx-5,ty-8,11,4);if(J.lvl>=2){x.fillStyle=s.bar?'#3fd06b':'#ff3b3b';x.fillRect(sx-4,ty-12,9,2);}}}
+    /* sign and stick */const sx=g.stick;x.fillStyle='#f6f6f2';x.fillRect(sx-28,22,56,22);x.fillStyle='#e0473c';x.fillRect(sx-28,22,56,3);
+    if(S.bio&&S.cur){jTxt(x,'BIO: '+S.film.n,sx,32,'#2c48c9',6);jTxt(x,S.film.txt,sx,41,'#e0302a',7);}else{jTxt(x,R.n,sx,32,'#2c48c9',6);jTxt(x,R.max?R.min+'–'+R.max+' cm':'Minst '+R.min+' cm',sx,41,'#e0302a',7);}
+    const k=0.18;x.fillStyle='#ffd34d';x.fillRect(sx+6,g.fy-Math.round(200*k),3,Math.round(200*k));for(let c=0;c<=200;c+=10){x.fillStyle='#7a5a00';x.fillRect(sx+6,g.fy-Math.round(c*k),c%50?2:4,1);}
+    if(!S.bio){x.fillStyle='#e0302a';x.fillRect(sx+3,g.fy-Math.round(R.min*k),9,1);if(R.max)x.fillRect(sx+3,g.fy-Math.round(R.max*k),9,1);}
+    /* queue */for(let i=S.q.length-1;i>=0;i--){const v=S.q[i];const sc=clamp(v.h/165,0.6,1.15);x.save();x.translate(v.x,v.y);x.scale(sc,sc);jPerson(x,0,0,v.look,{walk:v.walk});x.restore();jHearts(x,v.x,Math.round(v.y-24*sc-8),v.pat/v.P);
+      if(v.fast)jEmo(x,'🎫',v.x+7,v.y-20*sc,7);}
+    const v=S.cur;if(v){const sc=clamp(v.h/165,0.6,1.15);x.save();x.translate(v.x,v.y);x.scale(sc,sc);jPerson(x,0,0,v.look,{walk:v.st==='walk'?v.walk:0});x.restore();
+      if(v.st==='wait'){x.fillStyle='rgba(255,255,255,.7)';x.fillRect(sx+3,g.fy-Math.round(v.h*k),9,1);jTxt(x,(S.bio?v.age+' år':v.h+' cm'),sx+14,g.fy-Math.round(v.h*k)+3,'#fff',6,'left');}
+      if(J.lvl>=1&&!S.bio){x.fillStyle=v.band?'#3fd06b':'#777';x.fillRect(Math.round(v.x+3),Math.round(v.y-10*sc),3,2);}jHearts(x,v.x,Math.round(v.y-24*sc-8),v.pat/v.P);}
+    if(S.lost){const L=S.lost;jPerson(x,12,Math.round(H*0.62),L.look,{mood:'sad'});jTxt(x,'Mamma?',12,Math.round(H*0.62)-26,'#fff',6);}
+    if(S.away>0)jTxt(x,'Tåget är ute: '+Math.ceil(S.away)+' s',W*0.78,ty+12,'#ffd34d',6);}};
+
 /* ================= UI ================= */
 const el=(tag,attrs,...kids)=>{const e=document.createElement(tag);if(attrs)for(const k in attrs){const v=attrs[k];if(k==='class')e.className=v;else if(k==='html')e.innerHTML=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(v===true)e.setAttribute(k,'');else if(v!==false&&v!=null)e.setAttribute(k,v);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(c instanceof Node?c:document.createTextNode(String(c)));}return e;};
 const svg=(p,c)=>'<svg viewBox="0 0 24 24" class="'+(c||'')+'" aria-hidden="true">'+p+'</svg>';
@@ -4809,6 +5631,7 @@ function tabJobb(h){
     h.appendChild(el('div',{class:'card'},el('b',{class:'big'},c.titles[j.lvl]),el('span',{class:'muted'},c.n+' · '+c.at.map(id=>ZB[id].n).join(', ')),el('p',null,'Arbetstid '+fmtH(c.hours)+' måndag till fredag. Lön '+c.pay[j.lvl]+' kr i timmen.'),
       el('div',{class:'lrow'},el('span',null,'Prestation'),meter(j.perf,100,'ok'),el('b',null,Math.round(j.perf))),
       el('p',{class:'muted small'},j.lvl>=4?'Du har nått toppen av karriären!':'Nästa titel: '+c.titles[j.lvl+1]+'. Kräver full prestation och '+SKN[c.skill]+' nivå '+need+' (du har '+lvl(c.skill)+').'),
+      JOBG[j.id]?jobModeBox(j):null,
       el('div',{class:'row'},el('button',{type:'button',class:'btn',onclick:()=>{closePanels();goToWork();}},'Gå till jobbet'),el('button',{type:'button',class:'btn ghost',onclick:()=>confirmBox('Vill du säga upp dig från jobbet som '+c.titles[j.lvl].toLowerCase()+'?','Säg upp mig',quitJob)},'Säg upp dig'))));}
   h.appendChild(el('h3',null,ST.job?'Andra jobb':'Lediga jobb'));
   for(const id in CAREERS){if(ST.job&&ST.job.id===id)continue;const c=CAREERS[id];const req=c.need?Object.keys(c.need).map(k=>SKN[k]+' '+c.need[k]).join(', '):'';const ok=!c.need||Object.keys(c.need).every(k=>lvl(k)>=c.need[k]);
@@ -5041,7 +5864,7 @@ async function boot(hot){
   if(hot&&hot.st&&hot.st.look){startEl.hidden=true;beginPlay(hot.st,false);}else showStart();
 }
 {const H=window.claude&&window.claude.hot;const run=d=>{boot(d||{});};if(H&&typeof H.ready==='function')H.ready(run);else run(H&&H.data);}
-window.__game={hs:{HSN,HSID,hsCreate,hsSync,hsStatus,openRemoteFor,openSay,hsDonate,hsVote,hsCut,get SHARED(){return SHARED;},sharedT,hsCatchup,routineAt,sharedFunZone,hsWeatherAt,hsSocial,hsSay,hsBoard,hsLeave,hsRefreshShip,SAYS,NETB,hsChatSend,hsChatPull,hsMuted,hsSetMute,remSample,wrapChat,openDm,dmUnread,dmThreads,hsAdminPoll,openAdmin,hsMyReports,hsLoadFriends,hsFriend,hsBlock,showStart},mini:{JM,jumpMini,jTap,jChoose,jAdvance,closeMini,jStart,JCLASS,jState,MG,GHOLES,gfSim,DSONGS,dCompose,MREC,DAU},doSocial,socialReason,econ:{ECON,PROJ,PJ,HOME_UP,GIFTS,donate,startProject,buyHome,completeProj,cutRibbon,inaugurate,homeBuild,siteBuild,trophyList,trivsel,ribbonPos,giftScore,favGifts,econInvite,guestsFree,pStage,pStatus,socialFor,GIFT_SOC,PLATS,DYNS},errs:()=>ERRS,tick:dm=>{advanceTime(dm);decayNeeds(dm);if(ME.action)tickAction(dm);},saveNow,workAction,reason,get ST(){return ST;},ME,NPCS:()=>NPCS,doAction,AB,ZB,setWeather,openAct,openMenu,applyJob,findPath,goTo,beginPlay,defaultState,CAM,get mode(){return gameMode;},renderer,
+window.__game={hs:{HSN,HSID,hsCreate,hsSync,hsStatus,openRemoteFor,openSay,hsDonate,hsVote,hsCut,get SHARED(){return SHARED;},sharedT,hsCatchup,routineAt,sharedFunZone,hsWeatherAt,hsSocial,hsSay,hsBoard,hsLeave,hsRefreshShip,SAYS,NETB,hsChatSend,hsChatPull,hsMuted,hsSetMute,remSample,wrapChat,openDm,dmUnread,dmThreads,hsAdminPoll,openAdmin,hsMyReports,hsLoadFriends,hsFriend,hsBlock,showStart},mini:{JM,jumpMini,jTap,jChoose,jAdvance,closeMini,jStart,JCLASS,jState,MG,GHOLES,gfSim,DSONGS,dCompose,MREC,DAU,JOBG,jobState,jobMode,jobPractice,KING,DANI,DNEED},doSocial,socialReason,econ:{ECON,PROJ,PJ,HOME_UP,GIFTS,donate,startProject,buyHome,completeProj,cutRibbon,inaugurate,homeBuild,siteBuild,trophyList,trivsel,ribbonPos,giftScore,favGifts,econInvite,guestsFree,pStage,pStatus,socialFor,GIFT_SOC,PLATS,DYNS},errs:()=>ERRS,tick:dm=>{advanceTime(dm);decayNeeds(dm);if(ME.action)tickAction(dm);},saveNow,workAction,reason,get ST(){return ST;},ME,NPCS:()=>NPCS,doAction,AB,ZB,setWeather,openAct,openMenu,applyJob,findPath,goTo,beginPlay,defaultState,CAM,get mode(){return gameMode;},renderer,
   applyQuality,setPose:n=>{setPose(ME.person,n);},snapPose:()=>snapPose(ME.person),startMicro:id=>startMicro(ME.person,id),CRIT,PETS,get TT(){return TT;},scene,camera,updateCamera,setHour:h=>{ST.t=Math.floor(ST.t/1440)*1440+h*60;},POSES,makePerson,animPerson,PROF,sun,floor,hemi,ctx:()=>ctxOptions(),COURSE,SLIDE,renderFrame,eco:{STATUS,HORSES,hs,giveFx,hasFx,fxList,activeEvents,EVENTS,refreshReqs,REQ_T,emit,npcNeeds,ecoFunZone,startNpcMech,npcMechSpot,isEvent,coursePaid,reqProgress},RX,reactPulse,emote,startMicroP:(p,id)=>startMicro(p,id),npcState,critterSense:()=>critterSense(playerStim())};
 
 }catch(err){console.error(err);fail('Något gick fel: '+(err&&err.message));}
