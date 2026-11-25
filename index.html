@@ -3372,6 +3372,7 @@ function SupaNet(cfg){const sb=window.supabase.createClient(cfg.url,cfg.key,{aut
     blockSet:(me,to,on)=>rpc('hs_block_set',Object.assign(sec(me),{p_to:to,p_on:!!on})),
     report:(me,target,msg,reason)=>rpc('hs_report_add',Object.assign(sec(me),{p_target:target,p_msg:nn(msg),p_reason:reason||''})),
     myReports:me=>rpc('hs_my_reports',sec(me)),
+    deleteMe:me=>rpc('hs_delete_me',sec(me)),
     adminOverview:me=>rpc('hs_admin_overview',sec(me)),
     adminPlayer:(me,target,o)=>rpc('hs_admin_player',Object.assign(sec(me),{p_target:target,p_status:nn(o.status),p_admin:o.admin==null?null:!!o.admin,p_name:nn(o.name)})),
     adminReport:(me,id,outcome)=>rpc('hs_admin_report',Object.assign(sec(me),{p_report:id,p_outcome:outcome||''})),
@@ -3562,6 +3563,13 @@ function hsStart(st,isNew,tSaved){SHARED=true;document.body.classList.add('share
   const priv=HSN.closed&&!!(NETB.authed&&NETB.authed());rt.join(HSN.me.id,hsMeta(),{priv});
   if(HSN.closed&&!priv)setTimeout(()=>{if(SHARED&&!(NETB.authed&&NETB.authed()))toast('Kunde inte logga in säkert på skeppet, så du ser inte de andra just nu. Ladda om sidan om en stund.','warn');},1500);
   hsRefreshShip(true);hsLoadPlayers();hsChatPull(true);if(HSN.closed){hsLoadFriends();hsMyReports();if(HSN.admin)hsAdminPoll();}setTimeout(hsSave,2500);}
+/* Radera figuren: tar bort spelaren och allt som hör till den på servern (chatt, vänner, blockeringar, sparning) och glömmer den på enheten. */
+function hsAskDelete(me,nm){if(!me||!NETB||!NETB.deleteMe)return;
+  showDialog('Radera '+(nm||'din figur')+'?',el('div',null,el('p',null,'Figuren, sparningen, chattmeddelanden, vänner och blockeringar raderas för alltid från skeppet. Det går inte att ångra.'),el('p',{class:'small muted'},'Pengar och arbete du gett till skeppets projekt finns kvar, men utan ditt namn.')),
+    [['Avbryt',null,'ghost'],['Radera för alltid',()=>hsDeleteMe(me)]]);}
+async function hsDeleteMe(me){try{await NETB.deleteMe(me);}catch(e){toast('Kunde inte radera just nu: '+(e.message||e)+'. Försök igen om en stund.','warn');return;}
+  if(SHARED){try{NETB.rt.leave();}catch(e){}HSN.rem.forEach(remDrop);HSN.rem.clear();freeDyn('rhomes');HSN.homesKey='';SHARED=false;paused=true;document.body.classList.remove('shared');}
+  HSID.clear();lsDel('hs-dmread-'+me.id);lsDel('hs-repseen-'+me.id);HSN.me=null;closePanels();toast('Figuren och allt som hörde till den är raderat.','info');showStart();}
 async function hsLeave(){if(!SHARED)return;try{await hsSave();}catch(e){}try{NETB.rt.leave();}catch(e){}HSN.rem.forEach(remDrop);HSN.rem.clear();freeDyn('rhomes');HSN.homesKey='';SHARED=false;paused=true;document.body.classList.remove('shared');}   /* nothing runs on solo rules until the start screen or the next boarding */
 
 /* ---------- realtime ---------- */
@@ -3919,7 +3927,10 @@ function hsMer(h){if(!SHARED)return;const me=HSN.me;h.appendChild(el('h3',null,'
   const code=HSID.code(me);const inp=el('input',{type:'text',readonly:true,value:code,class:'codebox','aria-label':'Flyttkod'});
   h.appendChild(el('div',{class:'card'},el('b',null,'Din flyttkod'),el('span',{class:'muted small'},'Med koden kan du spela samma figur på en annan enhet. Dela den inte med andra.'),inp,
     el('div',{class:'row'},el('button',{type:'button',class:'btn ghost',onclick:()=>{inp.select();try{navigator.clipboard.writeText(code).then(()=>toast('Flyttkoden är kopierad.','info'));}catch(e){document.execCommand&&document.execCommand('copy');}}},'Kopiera'),
-      el('button',{type:'button',class:'btn ghost',onclick:()=>{closePanels();hsLeave().then(showStart);}},'Lämna skeppet'))));}
+      el('button',{type:'button',class:'btn ghost',onclick:()=>{closePanels();hsLeave().then(showStart);}},'Lämna skeppet'))));
+  h.appendChild(el('div',{class:'card'},el('b',null,'Radera min figur'),el('span',{class:'muted small'},'Tar bort '+ST.name+' och allt som hör till figuren från skeppet för alltid.'),
+    el('div',{class:'row'},el('button',{type:'button',class:'btn ghost',onclick:()=>hsAskDelete(me,ST.name)},'Radera figuren…'),
+      el('a',{class:'btn ghost',href:'integritet.html',target:'_blank',rel:'noopener'},'Integritet'))));}
 async function hsStartCard(host){const card=el('div',{class:'slot shared'});host.appendChild(card);
   if(!NETB){const url=window.HS_PUBLIC_URL;if(url){card.appendChild(el('div',{class:'slot-info'},el('b',null,'Spela med andra'),el('span',null,'Det gemensamma skeppet där alla har samma klocka.')));card.appendChild(el('a',{class:'btn',href:url,target:'_blank',rel:'noopener'},'Öppna'));}else card.remove();return;}
   card.appendChild(el('div',{class:'slot-info'},el('b',null,'Gemensamma skeppet'),el('span',{id:'hsStat'},'Kontaktar skeppet…')));const btns=el('div',{class:'row'});card.appendChild(btns);
@@ -3930,6 +3941,7 @@ async function hsStartCard(host){const card=el('div',{class:'slot shared'});host
   if(st.has&&st.st==='pending'){s.textContent=nm+' väntar på att en vuxen på skeppet ska släppa in dig. '+clock;btns.appendChild(el('button',{type:'button',class:'btn ghost',onclick:()=>showStart()},'Kolla igen'));
     clearTimeout(HSN.waitT);HSN.waitT=setTimeout(()=>{if(!startEl.hidden&&gameMode==='menu')showStart();},15000);}
   else if(st.has&&st.st==='blocked'){s.textContent=nm+' är avstängd från skeppet. Prata med den vuxna som driver skeppet.';}
+  if(st.has&&(st.st==='blocked'||st.st==='pending'))btns.appendChild(el('button',{type:'button',class:'btn ghost',onclick:()=>hsAskDelete(HSID.get(),nm)},'Radera figuren'));
   else if(st.has){btns.appendChild(el('button',{type:'button',class:'btn',onclick:async e=>{e.target.disabled=true;startEl.hidden=true;try{if(!await hsBoard()){startEl.hidden=false;toast('Hittade ingen figur.');}}catch(err){startEl.hidden=false;e.target.disabled=false;$('#hsStat').textContent='Kunde inte gå ombord: '+(err.message||err);}}},'Gå ombord som '+(st.mine&&st.mine.name||'du')));}
   else{btns.appendChild(el('button',{type:'button',class:'btn',onclick:()=>openCreate('hs')},'Skapa din figur'));if(st.closed)s.textContent=clock+' · Nya spelare släpps in av en vuxen på skeppet.';}
   btns.appendChild(el('button',{type:'button',class:'btn ghost',onclick:()=>{const body=el('div');const inp=el('input',{type:'text',placeholder:'HS-…',class:'codebox'});body.appendChild(el('p',{class:'small'},'Klistra in flyttkoden från din andra enhet.'));body.appendChild(inp);
