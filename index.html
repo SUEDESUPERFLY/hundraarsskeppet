@@ -418,6 +418,7 @@ body.shared #speeds,body.shared .ffwd{display:none!important}
 .slot.shared{flex-wrap:wrap;background:linear-gradient(135deg,rgba(255,236,200,.9),rgba(255,250,240,.92));border:1px solid rgba(232,153,58,.35)}.slot.shared .row{margin-top:6px;width:100%}
 .card.friend.player.on b{color:#2f7d4a}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.card.socopt{cursor:pointer}.card.socopt.on{border:2px solid var(--honey2);background:var(--card2)}.card.socopt b{font:600 17px/1.2 var(--f-d)}.socnote{background:var(--card2);border-radius:12px;padding:10px 12px}.pinin{letter-spacing:.3em;font-size:20px;max-width:12em}
 </style>
 
 <canvas id="scene" tabindex="0" aria-label="Spelvärlden: rymdskeppet"></canvas>
@@ -3373,6 +3374,8 @@ function SupaNet(cfg){const sb=window.supabase.createClient(cfg.url,cfg.key,{aut
     report:(me,target,msg,reason)=>rpc('hs_report_add',Object.assign(sec(me),{p_target:target,p_msg:nn(msg),p_reason:reason||''})),
     myReports:me=>rpc('hs_my_reports',sec(me)),
     deleteMe:me=>rpc('hs_delete_me',sec(me)),
+    parentSet:(me,pin,social,newPin)=>rpc('hs_parent_set',Object.assign(sec(me),{p_pin:nn(pin),p_social:nn(social),p_new_pin:nn(newPin)})),
+    adminSocial:(me,target,social,clearPin)=>rpc('hs_admin_social',Object.assign(sec(me),{p_target:target,p_social:nn(social),p_clear_pin:!!clearPin})),
     adminOverview:me=>rpc('hs_admin_overview',sec(me)),
     adminPlayer:(me,target,o)=>rpc('hs_admin_player',Object.assign(sec(me),{p_target:target,p_status:nn(o.status),p_admin:o.admin==null?null:!!o.admin,p_name:nn(o.name)})),
     adminReport:(me,id,outcome)=>rpc('hs_admin_report',Object.assign(sec(me),{p_report:id,p_outcome:outcome||''})),
@@ -3547,10 +3550,10 @@ async function hsCreate(c){const me=HSID.get()||HSID.make();HSN.me=me;await hsSy
   if(r.status&&r.status!=='ok'){/* the ship is closed: the figure waits until an adult lets it in */st.fresh=true;
     await NETB.save(me,JSON.parse(JSON.stringify(st)),{name:st.name,look:st.look,home:st.home,v:1});showStart();
     toast(st.name+' är skapad! En vuxen på skeppet behöver släppa in dig innan du kan gå ombord.','big');return;}
-  HSN.closed=!!r.closed;HSN.admin=false;hsStart(st,true,null);}
+  HSN.closed=!!r.closed;HSN.admin=false;HSN.social=r.social||'all';HSN.pin=!!r.pin;hsStart(st,true,null);}
 async function hsBoard(){const me=HSID.get();if(!me)return false;HSN.me=me;await hsSync();const L=await NETB.load(me);if(!L||!L.save)return false;
   if(L.status&&L.status!=='ok'){toast(L.status==='blocked'?'Din figur är avstängd från skeppet just nu.':'Din figur väntar fortfarande på att en vuxen ska släppa in den.','warn');return false;}
-  HSN.closed=!!L.closed;HSN.admin=!!L.admin;const st=hsPrep(L.save,(L.pub&&L.pub.home)||L.save.home);const fresh=!!st.fresh;delete st.fresh;if(fresh)st.t=sharedT();
+  HSN.closed=!!L.closed;HSN.admin=!!L.admin;HSN.social=L.social||'all';HSN.pin=!!L.pin;const st=hsPrep(L.save,(L.pub&&L.pub.home)||L.save.home);const fresh=!!st.fresh;delete st.fresh;if(fresh)st.t=sharedT();
   hsStart(st,fresh,fresh?null:st.t);return true;}
 function hsStart(st,isNew,tSaved){SHARED=true;document.body.classList.add('shared');paused=false;startEl.hidden=true;createEl.hidden=true;
   beginPlay(st,isNew);/* beginPlay → startGame → econInit, buildNPCs (fixed cabins), saves via hsSave */
@@ -3763,6 +3766,8 @@ async function hsChatPull(quiet){if(!SHARED||!NETB.chatSince||!HSN.me)return;if(
 /* the server may not have the chat yet: then the quick phrases still work as bubbles and the text field waits */
 const chatMissing=e=>/Could not find the function|PGRST202|does not exist|not found/i.test(String(e&&e.message||e));
 async function hsChatSend(text,to){const b=hsCleanChat(text);if(!b||!SHARED)return false;const now=performance.now();
+  const soc=HSN.social||'all';if(soc==='off'||(!to&&soc==='friends')){const i=to?-1:SAYS.indexOf(b);if(i>=0){hsSay(i);return true;}
+    toast(soc==='off'?'En vuxen har stängt av chatten för dig. Du kan fortfarande vinka och säga färdiga fraser.':'Du kan bara skriva privat till dina vänner. Tryck på en vän för att skriva.','info');return false;}
   if(to&&HSN.dmOff){toast('Privata meddelanden slås på snart.','info');return false;}
   if(!to&&HSN.chatOff){const i=SAYS.indexOf(b);if(i>=0){hsSay(i);return true;}toast('Fritextchatten är inte påslagen på skeppet än.','info');return false;}
   if(now-HSN.chatSentT<1200){toast('Vänta en liten stund mellan meddelandena.','info');return false;}HSN.chatSentT=now;
@@ -3772,6 +3777,8 @@ async function hsChatSend(text,to){const b=hsCleanChat(text);if(!b||!SHARED)retu
   catch(e){const m=String(e&&e.message||e);
     if(chatMissing(e)){if(to){HSN.dmOff=HSN.dmWasOff=true;HSN.dmRetry=performance.now()+300000;toast('Privata meddelanden slås på snart.','info');return false;}
       HSN.chatOff=true;const i=SAYS.indexOf(b);if(i>=0){hsSay(i);return true;}toast('Fritextchatten är inte påslagen på skeppet än.','info');return false;}
+    if(/social_off|social_public/.test(m)){toast('En vuxen har ändrat chatten för dig.','info');hsLoadFriends();return false;}
+    if(/to_off/.test(m)){toast('Den spelaren kan inte ta emot meddelanden.','info');return false;}
     if(/rate/.test(m))toast('Du skriver lite för snabbt – vänta några sekunder.','info');else if(/notfriend/.test(m)){toast('Ni behöver vara vänner för att skriva privat.','info');hsLoadFriends();}else if(/blocked_pair/.test(m))toast('Det går inte att skriva till den spelaren.','info');else if(/\bto\b/.test(m))toast('Det gick inte att skicka till den spelaren.','info');else if(!/empty/.test(m))hsNetErr(e);return false;}}
 function chatLine(c){const t=new Date(c.t);const hm=isNaN(t)?'':String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');const mine=c.u===HSN.me.id;
   const line=el('div',{class:'cl'+(mine?' me':'')},el('b',null,mine?'Du':c.n),el('span',{class:'tx'},c.b),el('i',null,hm));
@@ -3804,7 +3811,7 @@ function chatBubble(person,text){if(!person)return;const lines=wrapChat(text,24,
 
 /* ---------- UI pieces ---------- */
 function dmBox(uid,name,online){const box=el('div',{class:'dmbox'});box.appendChild(el('div',{class:'chatlog dm',id:'dmlog','data-uid':uid}));
-  const off=!!HSN.dmOff;const inp=el('input',{type:'text',maxlength:'200',placeholder:off?'Privata meddelanden slås på snart':'Skriv till '+name+'…',class:'chatin','aria-label':'Meddelande till '+name,enterkeyhint:'send',autocomplete:'off',disabled:off});
+  const soff=HSN.social==='off';const off=!!HSN.dmOff||soff;const inp=el('input',{type:'text',maxlength:'200',placeholder:soff?'En vuxen har stängt av chatten':off?'Privata meddelanden slås på snart':'Skriv till '+name+'…',class:'chatin','aria-label':'Meddelande till '+name,enterkeyhint:'send',autocomplete:'off',disabled:off});
   const btn=el('button',{type:'button',class:'btn',disabled:off},'Skicka');
   const send=async()=>{if(!hsCleanChat(inp.value))return;btn.disabled=true;const ok=await hsChatSend(inp.value,uid);btn.disabled=false;if(ok)inp.value='';};
   btn.addEventListener('click',send);inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send();}});
@@ -3833,7 +3840,7 @@ function personButtons(uid,name,goFn){const B=[];
   if(goFn)B.push(['Gå dit',goFn,'ghost']);B.push(['Stäng',null,'ghost']);return B;}
 function reopenPerson(uid,name){if(!dlg.hidden&&document.getElementById('dialog').querySelector('.frbox,#dmlog'))openDm(uid,name);}
 async function hsLoadFriends(){if(!HSN.closed||!NETB.friends||!HSN.me)return;try{const f=await NETB.friends(HSN.me);const F=HSN.fr;const key=JSON.stringify([f.friends,f.out,f.in,f.blocked]);
-    F.friends=new Set(f.friends||[]);F.out=new Set(f.out||[]);F.inc=f.in||[];F.blocked=new Set(f.blocked||[]);if(f.admin!=null)HSN.admin=!!f.admin;
+    F.friends=new Set(f.friends||[]);F.out=new Set(f.out||[]);F.inc=f.in||[];F.blocked=new Set(f.blocked||[]);if(f.admin!=null)HSN.admin=!!f.admin;if(f.social){const was=HSN.social;HSN.social=f.social;HSN.pin=!!f.pin;if(was&&was!==f.social)socialChanged(true);}
     for(const x of F.inc)if(!HSN.frSeen.has(x.id)){HSN.frSeen.add(x.id);toast(x.n+' vill bli din vän.','social',{label:'Svara',fn:()=>openDm(x.id,x.n)});}
     if(key!==HSN.frKey){const open=document.getElementById('dialog').querySelector('.frbox');const uid=open&&!dlg.hidden?(document.getElementById('dmlog')||{dataset:{}}).dataset.uid||open.dataset.uid:null;HSN.frKey=key;if(uid){const r=HSN.rem.get(uid);if(r)openRemoteFor(r);}}
     updateChatBadge();}catch(e){hsNetErr(e);}}
@@ -3874,7 +3881,7 @@ function renderAdmin(){const T=document.getElementById('admtabs'),B=document.get
   const row=(title,sub,btns,quote)=>{const c=el('div',{class:'card admrow'},el('b',null,title),sub?el('span',{class:'muted small'},sub):null,quote?el('blockquote',{class:'repq'},quote):null);if(btns&&btns.length)c.appendChild(el('div',{class:'row'},btns));return c;};
   const b=(t,fn,cls)=>el('button',{type:'button',class:'btn'+(cls?' '+cls:''),onclick:fn},t);
   if(HSN.admTab==='pending'){B.appendChild(el('p',{class:'small muted'},'Släpp bara in den du vet vem det är. Neka stänger av figuren.'));if(!o.pending.length)B.appendChild(el('p',{class:'muted small'},'Ingen väntar just nu.'));
-    for(const p of o.pending)B.appendChild(row(p.n,'Ville komma ombord '+tm(p.t),[b('Släpp in',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{status:'ok'}),p.n+' är insläppt.')),b('Neka',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{status:'blocked'}),p.n+' är nekad.'),'ghost')]));}
+    for(const p of o.pending)B.appendChild(row(p.n,'Ville komma ombord '+tm(p.t),[b('Släpp in',()=>socialPick('Släpp in '+p.n,'Hur mycket ska '+p.n+' kunna chatta? Du kan ändra det senare under Spelare.','all',k=>admDo(async()=>{await NETB.adminPlayer(HSN.me,p.id,{status:'ok'});await NETB.adminSocial(HSN.me,p.id,k,false);},p.n+' är insläppt. Chatt: '+CHATLVL[k]+'.').then(()=>openAdmin('pending')))),b('Neka',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{status:'blocked'}),p.n+' är nekad.'),'ghost')]));}
   else if(HSN.admTab==='reports'){if(!o.reports.length)B.appendChild(el('p',{class:'muted small'},'Inga nya rapporter.'));
     for(const r of o.reports){const done=t=>()=>admDo(()=>NETB.adminReport(HSN.me,r.id,t),'Rapporten är klar.');
       const btns=[b('Vi har pratat om det',done('Vi har pratat om det.'),'ghost'),b('Inget fel hittades',done('Vi tittade och hittade inget fel.'),'ghost')];
@@ -3884,14 +3891,48 @@ function renderAdmin(){const T=document.getElementById('admtabs'),B=document.get
   else if(HSN.admTab==='players'){for(const p of o.players){const self=p.id===me;const st={ok:'ombord',pending:'väntar',blocked:'avstängd'}[p.status]||p.status;const btns=[];
       if(!self){if(p.status==='ok')btns.push(b('Stäng av',()=>admDo(async()=>{await NETB.adminPlayer(HSN.me,p.id,{status:'blocked'});NETB.rt.send('kick',{to:p.id});},p.n+' är avstängd.'),'ghost'));else btns.push(b('Släpp in',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{status:'ok'}),p.n+' är insläppt.')));
         btns.push(b(p.admin?'Inte vuxen':'Gör till vuxen',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{admin:!p.admin}),p.admin?p.n+' är inte längre vuxen.':p.n+' är nu vuxen.'),'ghost'));}
+      btns.push(b('Chatt…',()=>socialPick('Chatt för '+p.n,null,p.social||'all',k=>admDo(async()=>{await NETB.adminSocial(HSN.me,p.id,k,false);NETB.rt.send('fr',{to:p.id});},'Chatt för '+p.n+': '+CHATLVL[k]+'.').then(()=>openAdmin('players')),
+        p.pin?[['Nollställ föräldra-PIN',()=>admDo(()=>NETB.adminSocial(HSN.me,p.id,null,true),'Föräldra-PIN för '+p.n+' är nollställd.').then(()=>openAdmin('players')),'ghost']]:null),'ghost'));
       btns.push(b('Byt namn',()=>{const inp=el('input',{type:'text',maxlength:'18',value:p.n,class:'chatin'});const bd=el('div',null,inp);showDialog('Nytt namn för '+p.n,bd,[['Spara',()=>admDo(()=>NETB.adminPlayer(HSN.me,p.id,{name:inp.value}),'Namnet är ändrat.').then(()=>openAdmin('players'))],['Avbryt',()=>openAdmin('players'),'ghost']]);},'ghost'));
-      B.appendChild(row(p.n+(p.admin?' · vuxen':'')+(self?' (du)':''),st+' · senast '+tm(p.seen),btns));}}
+      B.appendChild(row(p.n+(p.admin?' · vuxen':'')+(self?' (du)':''),st+' · chatt: '+CHATLVL[p.social||'all']+(p.pin?' · föräldra-PIN':'')+' · senast '+tm(p.seen),btns));}}
   else{const L=HSN.admLog;if(!L){B.appendChild(el('p',{class:'muted small'},'Hämtar chattloggen…'));return;}B.appendChild(el('p',{class:'small muted'},'Allt som skrivits de senaste 30 dagarna, även privata meddelanden.'));
     if(!L.length)B.appendChild(el('p',{class:'muted small'},'Inga meddelanden.'));
     const box=el('div',{class:'chatlog admlog'});for(const c of L.slice().reverse()){box.appendChild(el('div',{class:'cl'+(c.to?' priv':'')},el('b',null,c.n+' → '+(c.to?c.tn||'?':'alla')),el('span',{class:'tx'},c.b),el('i',null,tm(c.t)),
       el('button',{type:'button',class:'flag',title:'Ta bort','aria-label':'Ta bort meddelandet',onclick:()=>confirmBox('Ta bort meddelandet från '+c.n+'?','Ta bort',()=>admDo(()=>NETB.adminDeleteMsg(HSN.me,c.id),'Meddelandet är borttaget.').then(()=>openAdmin('log')))},'✕')));}
     B.appendChild(box);if(L.length>=200)B.appendChild(b('Visa äldre',()=>admLoadLog(L[0].id).then(renderAdmin),'ghost'));}}
+/* ---------- chat level (set by adults) ---------- */
+const CHATLVL={all:'Allt',friends:'Bara vänner',off:'Ingen chatt'};
+const CHATLVL_D={all:'Allmänna chatten och privata meddelanden med vänner.',friends:'Bara privata meddelanden med vänner. Ingen allmän chatt.',off:'Ingen egen text alls. Färdiga fraser, vinkningar och vänner fungerar som vanligt.'};
+function socialOpts(cur,onPick){const box=el('div');const btns=[];for(const k of['all','friends','off']){const b=el('button',{type:'button',class:'card socopt'+(cur===k?' on':''),'aria-pressed':String(cur===k),onclick:()=>{btns.forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',String(x===b));});onPick(k);}},el('b',null,CHATLVL[k]),el('span',{class:'muted small'},CHATLVL_D[k]));btns.push(b);box.appendChild(b);}return box;}
+function socialPick(title,intro,cur,onPick,extra){let pick=cur||'all';const body=el('div');if(intro)body.appendChild(el('p',{class:'small'},intro));body.appendChild(socialOpts(pick,k=>{pick=k;}));
+  showDialog(title,body,[...(extra||[]),['Avbryt',()=>openAdmin(HSN.admTab),'ghost'],['Spara',()=>onPick(pick)]]);}
+function socialChanged(remote){if(remote)toast('En vuxen har ändrat chatten för dig: '+CHATLVL[HSN.social||'all']+'.','info');if(chatOpen()||document.querySelector('#dialog .socnote'))openSay();}
+function openParent(){const me=HSN.me;if(!me||!NETB.parentSet)return;const has=!!HSN.pin;let pick=HSN.social||'all';const body=el('div');
+  body.appendChild(el('p',{class:'small'},'Här bestämmer en förälder hur mycket '+ST.name+' kan chatta. Det gäller figuren, även om den flyttas till en annan enhet.'));
+  body.appendChild(socialOpts(pick,k=>{pick=k;}));
+  const pin=el('input',{type:'password',inputmode:'numeric',autocomplete:'off',maxlength:'8',class:'chatin pinin','aria-label':has?'Förälderns PIN-kod':'Ny PIN-kod'});
+  const np=el('input',{type:'password',inputmode:'numeric',autocomplete:'off',maxlength:'8',class:'chatin pinin','aria-label':'Ny PIN-kod'});
+  const msg=el('p',{class:'small','aria-live':'polite'});
+  if(has){body.appendChild(el('p',{class:'small'},el('b',null,'Förälderns PIN-kod')));body.appendChild(pin);
+    body.appendChild(el('p',{class:'small muted'},'Byt PIN-kod (valfritt):'));body.appendChild(np);
+    body.appendChild(el('p',{class:'small muted'},'Glömt PIN-koden? En vuxen på skeppet kan nollställa den i vuxenläget.'));}
+  else{body.appendChild(el('p',{class:'small'},el('b',null,'Välj en PIN-kod, 4–8 siffror, som barnet inte känner till')));body.appendChild(pin);}
+  body.appendChild(msg);
+  const save=el('button',{type:'button',class:'btn',onclick:async()=>{save.disabled=true;msg.textContent='';
+    try{const r=has?await NETB.parentSet(me,pin.value,pick,np.value||null):await NETB.parentSet(me,null,pick,pin.value);
+      if(r&&r.ok){HSN.social=r.social;HSN.pin=!!r.pin;closePanels();toast('Sparat. Chatt för '+ST.name+': '+CHATLVL[r.social]+'.','info');return;}
+      const e=r&&r.err;msg.textContent=e==='pin'?'Fel PIN-kod. '+(r.left>0?r.left+' försök kvar.':''):e==='pin_wait'?'För många fel försök. Vänta 15 minuter.':e==='pin_format'||e==='pin_new'?'PIN-koden ska vara 4–8 siffror.':'Det gick inte att spara.';}
+    catch(e){msg.textContent='Det gick inte att spara: '+(e.message||e);}save.disabled=false;}},'Spara');
+  body.appendChild(el('div',{class:'row'},save));showDialog('Föräldrainställningar',body,[['Stäng',null,'ghost']]);}
+function openSayLimited(body){const soc=HSN.social||'all';const T=dmThreads(),U=dmUnread();
+  body.appendChild(el('p',{class:'small socnote'},soc==='off'?'En vuxen har stängt av chatten för dig. Du kan fortfarande säga färdiga fraser, vinka och vara vän med andra.':'En vuxen har bestämt att du bara skriver privat med dina vänner. Tryck på en vän för att skriva.'));
+  if(soc==='friends'&&T.length){const ch=el('div',{class:'chips dmchips'});for(const t of T.slice(0,8))ch.appendChild(el('button',{type:'button',class:'chip',onclick:()=>openDm(t.uid,t.name)},t.name,U[t.uid]?el('i',{class:'dot'},String(U[t.uid])):null));
+    body.appendChild(el('h3',{class:'chath'},'Privata samtal'));body.appendChild(ch);}
+  body.appendChild(el('h3',{class:'chath'},'Färdiga fraser'));
+  const g=el('div',{class:'chips saygrid'});SAY_QUICK.forEach((t,i)=>g.appendChild(el('button',{type:'button',class:'chip'+(i>=18?' emo':''),onclick:()=>hsChatSend(t)},t)));body.appendChild(g);
+  showDialog('Chatt',body,[['Stäng',null,'ghost']]);}
 function openSay(){if(!SHARED)return;closePanels();HSN.unread=0;updateChatBadge();const body=el('div',{class:'chatwrap'});
+  if((HSN.social||'all')!=='all'){openSayLimited(body);return;}
   const T=dmThreads(),U=dmUnread();if(T.length){const ch=el('div',{class:'chips dmchips'});for(const t of T.slice(0,8))ch.appendChild(el('button',{type:'button',class:'chip',onclick:()=>openDm(t.uid,t.name)},t.name,U[t.uid]?el('i',{class:'dot'},String(U[t.uid])):null));
     body.appendChild(el('h3',{class:'chath'},'Privata samtal'));body.appendChild(ch);body.appendChild(el('h3',{class:'chath'},'Alla ombord'));}
   body.appendChild(el('div',{id:'chatlog',class:'chatlog','aria-live':'polite'}));
@@ -3901,7 +3942,7 @@ function openSay(){if(!SHARED)return;closePanels();HSN.unread=0;updateChatBadge(
   btn.addEventListener('click',send);inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send();}});
   body.appendChild(el('div',{class:'chatrow'},inp,btn));
   const g=el('div',{class:'chips saygrid'});SAY_QUICK.forEach((t,i)=>g.appendChild(el('button',{type:'button',class:'chip'+(i>=18?' emo':''),onclick:()=>hsChatSend(t)},t)));body.appendChild(g);
-  body.appendChild(el('p',{class:'muted small'},HSN.closed?'Alla ombord kan läsa den här chatten, och en vuxen som driver skeppet kan läsa all chatt. Skriv aldrig ditt telefonnummer, var du bor eller vad du heter i andra appar. Vill du skriva till bara en vän: tryck på figuren. Tryck ⚑ för att rapportera.':'Alla ombord kan läsa den här chatten. Vill du skriva till bara en person: tryck på figuren. Meddelanden sparas i tre dagar.'));
+  body.appendChild(el('p',{class:'muted small'},HSN.closed?'Alla ombord kan läsa den här chatten, och en vuxen som driver skeppet kan läsa all chatt. Skriv aldrig ditt telefonnummer, var du bor eller vad du heter i andra appar. Vill du skriva till bara en vän: tryck på figuren. Tryck ⚑ för att rapportera.':'Alla ombord kan läsa den här chatten. Vill du skriva till bara en person: tryck på figuren. Meddelanden sparas i 30 dagar.'));
   showDialog('Chatt',body,[['Stäng',null,'ghost']]);renderChatLog();hsChatPull(false);}
 function hsCtx(x,z){const o=[];if(!SHARED)return o;HSN.rem.forEach(r=>{if(!r.online)return;const d=Math.hypot(r.x-x,r.z-z);if(d<2.2){o.push({d:d+0.1,ic:'hand',label:'Prata med '+r.name,fn:()=>hsSocial(r,'prata')});o.push({d:d+0.12,ic:'chat',label:'Skriv till '+r.name,fn:()=>openRemoteFor(r)});}else if(d<9)o.push({d:d*0.3+1.5,ic:'hand',label:'Vinka till '+r.name,fn:()=>hsSocial(r,'vinka')});});return o;}
 function hsActPeople(host){if(!SHARED)return;const near=[];HSN.rem.forEach(r=>{if(Math.hypot(r.x-ME.x,r.z-ME.z)<9)near.push(r);});if(!near.length)return;const sec=el('section',{class:'grp'},el('h3',null,'Spelare här'));
@@ -3928,6 +3969,8 @@ function hsMer(h){if(!SHARED)return;const me=HSN.me;h.appendChild(el('h3',null,'
   h.appendChild(el('div',{class:'card'},el('b',null,'Din flyttkod'),el('span',{class:'muted small'},'Med koden kan du spela samma figur på en annan enhet. Dela den inte med andra.'),inp,
     el('div',{class:'row'},el('button',{type:'button',class:'btn ghost',onclick:()=>{inp.select();try{navigator.clipboard.writeText(code).then(()=>toast('Flyttkoden är kopierad.','info'));}catch(e){document.execCommand&&document.execCommand('copy');}}},'Kopiera'),
       el('button',{type:'button',class:'btn ghost',onclick:()=>{closePanels();hsLeave().then(showStart);}},'Lämna skeppet'))));
+  if(HSN.closed&&NETB.parentSet)h.appendChild(el('div',{class:'card'},el('b',null,'Föräldrainställningar'),el('span',{class:'muted small'},'Chatt: '+CHATLVL[HSN.social||'all']+(HSN.pin?' · skyddad med PIN-kod':' · ingen PIN-kod än')),
+    el('div',{class:'row'},el('button',{type:'button',class:'btn ghost',onclick:()=>openParent()},'Ändra…'))));
   h.appendChild(el('div',{class:'card'},el('b',null,'Radera min figur'),el('span',{class:'muted small'},'Tar bort '+ST.name+' och allt som hör till figuren från skeppet för alltid.'),
     el('div',{class:'row'},el('button',{type:'button',class:'btn ghost',onclick:()=>hsAskDelete(me,ST.name)},'Radera figuren…'),
       el('button',{type:'button',class:'btn ghost',onclick:()=>showDialog('Integritet',el('iframe',{src:'integritet.html',title:'Integritet',style:'width:100%;height:62vh;border:0;border-radius:10px;background:#0b0e24'}),[['Stäng',null]])},'Integritet'))));}
