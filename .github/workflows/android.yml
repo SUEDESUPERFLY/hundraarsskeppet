@@ -54,12 +54,33 @@ jobs:
           UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
         run: gradle --no-daemon --stacktrace bundleRelease
 
-      - name: Samla filer
+      - name: Kontrollera AAB och bygg test-APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
         run: |
           mkdir -p out
-          cp android/app/build/outputs/bundle/release/app-release.aab "out/hundraarsskeppet-$VERSION_NAME.aab"
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          cp "$AAB" "out/hundraarsskeppet-$VERSION_NAME.aab"
+          gh release download -R google/bundletool --pattern 'bundletool-all-*.jar' -O "$RUNNER_TEMP/bundletool.jar"
+          BT="java -jar $RUNNER_TEMP/bundletool.jar"
+          echo "::group::bundletool validate"; $BT validate --bundle="$AAB"; echo "::endgroup::"
+          echo "::group::Manifest"; $BT dump manifest --bundle="$AAB"; echo "::endgroup::"
+          if [ -n "${UPLOAD_KEYSTORE:-}" ]; then
+            KS="$UPLOAD_KEYSTORE"; SP="$UPLOAD_STORE_PASSWORD"; KA="$UPLOAD_KEY_ALIAS"; KP="$UPLOAD_KEY_PASSWORD"; SUF=""
+          else
+            # Ingen uppladdningsnyckel här: test-APK:n signeras med en tillfällig nyckel.
+            KS="$RUNNER_TEMP/test.jks"; SP=testtest; KA=test; KP=testtest; SUF="-test"
+            keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias test -keyalg RSA -keysize 2048 -validity 3650 \
+              -storepass "$SP" -keypass "$KP" -dname "CN=Hundraarsskeppet test"
+          fi
+          $BT build-apks --bundle="$AAB" --output="$RUNNER_TEMP/u.apks" --mode=universal \
+            --ks="$KS" --ks-pass="pass:$SP" --ks-key-alias="$KA" --key-pass="pass:$KP"
+          unzip -p "$RUNNER_TEMP/u.apks" universal.apk > "out/hundraarsskeppet-$VERSION_NAME$SUF.apk"
+          rm -f "$RUNNER_TEMP/upload.jks" "$RUNNER_TEMP/test.jks"
           ls -l out
-          rm -f "$RUNNER_TEMP/upload.jks"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -73,4 +94,4 @@ jobs:
           gh release create "android-$VERSION_NAME" out/* \
             --draft --target "$GITHUB_SHA" \
             --title "Android $VERSION_NAME (versionCode $VERSION_CODE)" \
-            --notes "AAB för Google Play Console."
+            --notes "AAB för Google Play Console och universell APK för testinstallation."
