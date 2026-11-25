@@ -3930,7 +3930,7 @@ function hsMer(h){if(!SHARED)return;const me=HSN.me;h.appendChild(el('h3',null,'
       el('button',{type:'button',class:'btn ghost',onclick:()=>{closePanels();hsLeave().then(showStart);}},'Lämna skeppet'))));
   h.appendChild(el('div',{class:'card'},el('b',null,'Radera min figur'),el('span',{class:'muted small'},'Tar bort '+ST.name+' och allt som hör till figuren från skeppet för alltid.'),
     el('div',{class:'row'},el('button',{type:'button',class:'btn ghost',onclick:()=>hsAskDelete(me,ST.name)},'Radera figuren…'),
-      el('a',{class:'btn ghost',href:'integritet.html',target:'_blank',rel:'noopener'},'Integritet'))));}
+      el('button',{type:'button',class:'btn ghost',onclick:()=>showDialog('Integritet',el('iframe',{src:'integritet.html',title:'Integritet',style:'width:100%;height:62vh;border:0;border-radius:10px;background:#0b0e24'}),[['Stäng',null]])},'Integritet'))));}
 async function hsStartCard(host){const card=el('div',{class:'slot shared'});host.appendChild(card);
   if(!NETB){const url=window.HS_PUBLIC_URL;if(url){card.appendChild(el('div',{class:'slot-info'},el('b',null,'Spela med andra'),el('span',null,'Det gemensamma skeppet där alla har samma klocka.')));card.appendChild(el('a',{class:'btn',href:url,target:'_blank',rel:'noopener'},'Öppna'));}else card.remove();return;}
   card.appendChild(el('div',{class:'slot-info'},el('b',null,'Gemensamma skeppet'),el('span',{id:'hsStat'},'Kontaktar skeppet…')));const btns=el('div',{class:'row'});card.appendChild(btns);
