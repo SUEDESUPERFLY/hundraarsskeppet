@@ -1,5 +1,7 @@
-# Bygger Android-appen (signerad AAB för Google Play + APK för testinstallation).
-# Körs manuellt eller när något i android/ ändras. Resultatet läggs som artefakt och i ett utkast till release.
+# Bygger Android-appen som AAB för Google Play. Körs manuellt eller när något i android/ ändras.
+# Finns hemligheterna UPLOAD_KEYSTORE_B64, UPLOAD_STORE_PASSWORD, UPLOAD_KEY_ALIAS och UPLOAD_KEY_PASSWORD
+# blir AAB:n signerad med uppladdningsnyckeln, annars osignerad (signeras då med jarsigner innan uppladdning).
+# Resultatet läggs som artefakt och i ett utkast till release.
 name: Android-app
 
 on:
@@ -40,23 +42,22 @@ jobs:
         env:
           KS_B64: ${{ secrets.UPLOAD_KEYSTORE_B64 }}
         run: |
-          if [ -z "$KS_B64" ]; then echo "::error::Hemligheten UPLOAD_KEYSTORE_B64 saknas"; exit 1; fi
+          if [ -z "$KS_B64" ]; then echo "::notice::Ingen uppladdningsnyckel – AAB:n byggs osignerad"; exit 0; fi
           echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           echo "UPLOAD_KEYSTORE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
 
-      - name: Bygg AAB och APK
+      - name: Bygg AAB
         working-directory: android
         env:
           UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
           UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
           UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
-        run: gradle --no-daemon --stacktrace bundleRelease assembleRelease
+        run: gradle --no-daemon --stacktrace bundleRelease
 
       - name: Samla filer
         run: |
           mkdir -p out
           cp android/app/build/outputs/bundle/release/app-release.aab "out/hundraarsskeppet-$VERSION_NAME.aab"
-          cp android/app/build/outputs/apk/release/app-release.apk "out/hundraarsskeppet-$VERSION_NAME.apk"
           ls -l out
           rm -f "$RUNNER_TEMP/upload.jks"
 
@@ -72,4 +73,4 @@ jobs:
           gh release create "android-$VERSION_NAME" out/* \
             --draft --target "$GITHUB_SHA" \
             --title "Android $VERSION_NAME (versionCode $VERSION_CODE)" \
-            --notes "Signerad AAB för Google Play Console och APK för testinstallation."
+            --notes "AAB för Google Play Console."
